@@ -1,4 +1,6 @@
 /build
-/schemas/
+/schemas/*
+# Sovereign SMS: the vault schemas are kept so migrations can be checked (VaultMigrationTest).
+!/schemas/com.sovereignops.sms.vault.VaultDatabase/
 /foss/
 /gplay/
