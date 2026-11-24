@@ -35,6 +35,7 @@ import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
 import org.fossify.commons.helpers.NavigationIcon
 import org.fossify.commons.models.RadioItem
+import org.fossify.messages.extensions.messagesDB
 import org.fossify.messages.R
 import org.fossify.messages.activities.SimpleActivity
 import org.fossify.messages.databinding.ActivitySovereignSettingsBinding
@@ -171,6 +172,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         svCodes.isChecked = c.alertOneTimeCodes
         svTrace.text = getString(R.string.sv_trace_summary)
         svLedger.text = getString(R.string.sv_ledger_summary)
+        svInsights.text = getString(R.string.sv_insights_summary)
         svCooldown.text = if (c.cooldownMinutes == 0) getString(R.string.sv_off) else getString(R.string.sv_minutes, c.cooldownMinutes)
         listOf(svQuietStartHolder, svQuietEndHolder, svDaysHolder).forEach { it.beVisibleIf(quietOn) }
         loading = false
@@ -254,6 +256,7 @@ class SovereignSettingsActivity : SimpleActivity() {
             }
         }
         svTraceHolder.setOnClickListener { showTrace() }
+        svInsightsHolder.setOnClickListener { showInsights() }
         svLedgerHolder.setOnClickListener {
             startActivity(android.content.Intent(this@SovereignSettingsActivity, SovereignLedgerActivity::class.java))
         }
@@ -388,6 +391,42 @@ class SovereignSettingsActivity : SimpleActivity() {
             SovereignFlags.invalidate()
             load()
             toast(R.string.sv_preset_added)
+        }
+    }
+
+    /** Workload figures from message timestamps and direction only; shown, never stored. */
+    private fun showInsights() = org.fossify.commons.helpers.ensureBackgroundThread {
+        val days = 30 // matches the 30 days written in the sv_insights strings
+        val now = System.currentTimeMillis()
+        val rows = runCatching { messagesDB.getStamps(((now - days * 86_400_000L) / 1000L).toInt()) }.getOrDefault(emptyList())
+        val ins = com.sovereignops.sms.core.insights.Insights.compute(rows.map { it.toStamp() }, now, java.time.ZoneId.systemDefault(), days)
+        fun dur(ms: Long): String {
+            val m = ms / 60_000
+            return when {
+                m < 60 -> getString(R.string.sv_dur_min, m)
+                m < 48 * 60 -> getString(R.string.sv_dur_h_min, m / 60, m % 60)
+                else -> getString(R.string.sv_dur_d_h, m / (24 * 60), m / 60 % 24)
+            }
+        }
+        val text = if (ins.incoming + ins.outgoing == 0) getString(R.string.sv_insights_empty) else buildString {
+            appendLine(getString(R.string.sv_insights_volume, ins.incoming, ins.outgoing))
+            val hour = ins.busiestHour?.let { getString(R.string.sv_hour_range, it) } ?: "–"
+            val weekday = ins.busiestWeekday?.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault()) ?: "–"
+            appendLine(getString(R.string.sv_insights_busiest, hour, weekday))
+            appendLine()
+            val median = ins.medianResponseMillis
+            val p90 = ins.p90ResponseMillis
+            appendLine(if (median != null && p90 != null) getString(R.string.sv_insights_replies, ins.responses, dur(median), dur(p90), ins.slowReplies) else getString(R.string.sv_insights_no_replies))
+            appendLine(if (ins.waiting.isEmpty()) getString(R.string.sv_insights_none_waiting) else getString(R.string.sv_insights_waiting, ins.waiting.size, dur(ins.waiting.first().waitingMillis)))
+            appendLine()
+            append(getString(R.string.sv_insights_note))
+        }
+        runOnUiThread {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sv_insights)
+                .setMessage(text)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
         }
     }
 

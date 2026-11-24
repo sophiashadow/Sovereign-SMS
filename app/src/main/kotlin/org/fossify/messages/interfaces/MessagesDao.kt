@@ -35,6 +35,10 @@ interface MessagesDao {
     @Query("SELECT messages.* FROM messages LEFT OUTER JOIN recycle_bin_messages ON messages.id = recycle_bin_messages.id WHERE recycle_bin_messages.id IS NOT NULL AND recycle_bin_messages.deleted_ts < :timestamp")
     fun getOldRecycleBinMessages(timestamp: Long): List<Message>
 
+    // Sovereign SMS: workload insights read thread, direction and time only (never body or address).
+    @Query("SELECT messages.thread_id AS threadId, messages.type AS type, messages.date AS date FROM messages LEFT OUTER JOIN recycle_bin_messages ON messages.id = recycle_bin_messages.id WHERE recycle_bin_messages.id IS NULL AND messages.is_scheduled = 0 AND messages.type IN (1, 2) AND messages.date >= :sinceSeconds")
+    fun getStamps(sinceSeconds: Int): List<com.sovereignops.sms.core.insights.StampRow>
+
     @Query("SELECT * FROM messages WHERE thread_id = :threadId")
     fun getThreadMessages(threadId: Long): List<Message>
 

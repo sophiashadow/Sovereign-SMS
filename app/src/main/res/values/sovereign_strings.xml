@@ -231,4 +231,18 @@
     <string name="sv_restore_done">Restored. Cards now: %d</string>
     <string name="sv_notices">Open-source notices</string>
     <string name="sv_notices_summary">SQLCipher (BSD-3-Clause), LibTomCrypt, Apache-2.0</string>
+    <string name="sv_insights">Workload insights</string>
+    <string name="sv_insights_summary">Last 30 days: volume by hour and weekday, reply times, threads waiting (timestamps only, no message text)</string>
+    <string name="sv_insights_empty">No messages in the last 30 days in this app\'s message cache.</string>
+    <string name="sv_insights_volume">Last 30 days: received %1$d · sent %2$d</string>
+    <string name="sv_insights_busiest">Busiest hour: %1$s · busiest day: %2$s</string>
+    <string name="sv_insights_replies">Replies within a day: %1$d · median %2$s · 90%% within %3$s · slower: %4$d</string>
+    <string name="sv_insights_no_replies">No replies within a day to measure yet.</string>
+    <string name="sv_insights_waiting">Threads waiting for a reply: %1$d · oldest %2$s</string>
+    <string name="sv_insights_none_waiting">No thread is waiting for a reply.</string>
+    <string name="sv_insights_note">Counts come from this app\'s local message cache, so threads you haven\'t opened here may be missing. Nothing is stored.</string>
+    <string name="sv_dur_min">%d min</string>
+    <string name="sv_dur_h_min">%1$d h %2$d min</string>
+    <string name="sv_dur_d_h">%1$d d %2$d h</string>
+    <string name="sv_hour_range">%1$02d:00–%1$02d:59</string>
 </resources>

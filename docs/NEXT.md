@@ -44,3 +44,9 @@
 - `.sovbak` restore re-links cards to conversations by phone number. Cards with no matching conversation are kept unlinked (not shown in any thread, not in the queue) and carried into the next backup, so a later restore can re-link them. There is no screen yet to view or re-attach unlinked cards by hand.
 - Vault schema is now 2 (adds nullable `cards.addresses`). The 1→2 migration has not run on a device.
 - Instrumented (on-device) tests: none exist yet.
+
+## Slice G follow-ups (2026-11-24)
+
+- Insights read the app's local message cache (`messages` table), which fills as conversations are opened. A direct read of the Telephony provider would be complete but is a heavier change; do it only if the cache turns out to undercount on a device.
+- Insights are aggregate-only and are not gated by Quick Cover; they show no names, numbers or text.
+- Still not started: tags and notes per message, daily summaries.
