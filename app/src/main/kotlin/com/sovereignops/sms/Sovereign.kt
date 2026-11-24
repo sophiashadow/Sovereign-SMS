@@ -8,6 +8,9 @@ import android.content.Intent
 import androidx.core.app.NotificationCompat
 import com.sovereignops.sms.core.rules.Alert
 import com.sovereignops.sms.core.rules.Decision
+import com.sovereignops.sms.core.rules.FlagSignal
+import com.sovereignops.sms.core.guard.DraftGuard
+import com.sovereignops.sms.core.guard.GuardContext
 import com.sovereignops.sms.core.rules.IncomingMessage
 import com.sovereignops.sms.core.rules.RuleEngine
 import com.sovereignops.sms.core.screening.Disposition
@@ -67,8 +70,14 @@ object Sovereign {
 
     fun decide(context: Context, threadId: Long, address: String, body: String): Pair<Decision, ChannelKind> {
         val store = store(context)
-        val hasCard = com.sovereignops.sms.vault.VaultCache.cardFresh(context, threadId) != null
+        val card = com.sovereignops.sms.vault.VaultCache.cardFresh(context, threadId)
+        val hasCard = card != null
         val known = hasCard || !isUnknownSender(context, address)
+        // Incoming red flags. Receipt actions are opt-in per rule; none deletes, forwards or replies.
+        val flagHits = store.flagRules.filter { it.enabled }.let { rules ->
+            if (rules.isEmpty()) emptyList() else DraftGuard.check(body, rules, GuardContext(stage = card?.stage)).hits
+        }
+        if (store.category(threadId) == null) flagHits.firstNotNullOfOrNull { it.rule.category }?.let { store.setCategory(threadId, it) }
         val category = Workspace.resolve(store.category(threadId), known, hasCard)
         val message = IncomingMessage(
             address = address,
@@ -79,8 +88,10 @@ object Sovereign {
             lastAlertAt = store.lastAlertAt(threadId),
             category = category,
             workspaceMode = store.workspaceMode,
+            flags = flagHits.map { FlagSignal(it.rule.name, it.rule.silent, it.rule.tag) },
         )
         val decision = RuleEngine.evaluate(store.ruleConfig, message)
+        store.addThreadTags(threadId, decision.tags)
         return decision to Workspace.channel(decision, category)
     }
 

@@ -52,7 +52,7 @@ enum class KeywordEffect {
 /** Identifies which rule decided, so the UI can explain and the user can reverse it. */
 enum class RuleId {
     RULES_OFF, PRIORITY_CONTACT, CONVERSATION_PRIORITY, CONVERSATION_MUTED, ONE_TIME_CODE,
-    KEYWORD_PRIORITY, FOCUS, WORKSPACE_FOCUS, OFF_DUTY, QUIET_HOURS, UNKNOWN_SENDER, KEYWORD_SILENT, COOLDOWN, DEFAULT,
+    KEYWORD_PRIORITY, FOCUS, WORKSPACE_FOCUS, OFF_DUTY, QUIET_HOURS, UNKNOWN_SENDER, KEYWORD_SILENT, FLAG_SILENT, COOLDOWN, DEFAULT,
 }
 
 /**
@@ -119,7 +119,12 @@ data class IncomingMessage(
     val lastAlertAt: LocalDateTime?,
     val category: Category = if (isKnownContact) Category.PERSONAL else Category.UNKNOWN,
     val workspaceMode: WorkspaceMode = WorkspaceMode.ALL,
+    /** Incoming red flags that matched (already evaluated by the guard engine). */
+    val flags: List<FlagSignal> = emptyList(),
 )
+
+/** The parts of an incoming-flag match the rules engine acts on. */
+data class FlagSignal(val name: String, val silent: Boolean, val tag: String?)
 
 data class Decision(
     val alert: Alert,
@@ -145,13 +150,15 @@ object RuleEngine {
      *  6. quiet hours                              -> quietHoursAction
      *  7. unknown sender                           -> unknownSenderAction (if not ALERT)
      *  8. silent keyword                           -> SILENT
+     *  8b. incoming flag marked silent             -> SILENT
      *  9. cooldown                                 -> SILENT
      * 10. default                                  -> ALERT
      */
     fun evaluate(config: RuleConfig, message: IncomingMessage): Decision {
         val keywordHits = config.keywordRules.filter { it.matches(message.body) }
-        val tags = keywordHits.mapNotNull { it.tag?.trim()?.takeIf(String::isNotEmpty) }.toSet()
-        val keywordLines = keywordHits.map { "Keyword “${it.keyword.trim()}” matched" + (it.tag?.let { t -> " → tag “$t”" } ?: "") }
+        val tags = (keywordHits.mapNotNull { it.tag } + message.flags.mapNotNull { it.tag }).map(String::trim).filter(String::isNotEmpty).toSet()
+        val keywordLines = keywordHits.map { "Keyword “${it.keyword.trim()}” matched" + (it.tag?.let { t -> " → tag “$t”" } ?: "") } +
+            message.flags.map { "Flag “${it.name}” matched" + (it.tag?.let { t -> " → tag “$t”" } ?: "") }
 
         if (!config.enabled) {
             return Decision(Alert.ALERT, RuleId.RULES_OFF, emptyList(), tags, listOf("Rules are switched off") + keywordLines)
@@ -194,6 +201,9 @@ object RuleEngine {
         }
         keywordHits.firstOrNull { it.effect == KeywordEffect.SILENT }?.let {
             candidates += Triple(RuleId.KEYWORD_SILENT, Alert.SILENT, "Quiet keyword “${it.keyword.trim()}”")
+        }
+        message.flags.firstOrNull { it.silent }?.let {
+            candidates += Triple(RuleId.FLAG_SILENT, Alert.SILENT, "Flag “${it.name}” silences on receipt")
         }
         val last = message.lastAlertAt
         if (config.cooldownMinutes > 0 && last != null && t.isBefore(last.plusMinutes(config.cooldownMinutes.toLong()))) {

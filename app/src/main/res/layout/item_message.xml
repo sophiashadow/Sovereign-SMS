@@ -65,5 +65,19 @@
             android:textSize="@dimen/normal_text_size"
             tools:drawableEndCompat="@drawable/scheduled_message_icon"
             tools:text="Message content" />
+
+        <!-- Sovereign SMS: incoming red-flag badge; tap for triage. -->
+        <TextView
+            android:id="@+id/sv_flag_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/thread_message_body"
+            android:layout_toEndOf="@id/thread_message_sender_photo"
+            android:background="?attr/selectableItemBackground"
+            android:paddingHorizontal="@dimen/normal_margin"
+            android:paddingVertical="@dimen/tiny_margin"
+            android:textSize="@dimen/smaller_text_size"
+            android:visibility="gone"
+            tools:text="⚠ Rule: “match”" />
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

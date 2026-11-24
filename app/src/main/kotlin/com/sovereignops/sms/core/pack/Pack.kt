@@ -3,6 +3,9 @@ package com.sovereignops.sms.core.pack
 import com.sovereignops.sms.core.guard.GuardRule
 import com.sovereignops.sms.core.guard.MatchKind
 import com.sovereignops.sms.core.guard.Pattern
+import com.sovereignops.sms.core.guard.Severity
+import com.sovereignops.sms.core.crm.Stage
+import com.sovereignops.sms.core.rules.Category
 import com.sovereignops.sms.core.rules.RuleConfig
 import com.sovereignops.sms.core.rules.RuleConfigCodec
 import com.sovereignops.sms.core.templates.Template
@@ -22,13 +25,28 @@ data class Pack(
     val rules: RuleConfig? = null,
     val guard: List<GuardRule>? = null,
     val templates: List<Template>? = null,
+    /** Incoming red-flag rules; same rule shape as [guard]. */
+    val flags: List<GuardRule>? = null,
 )
 
 @Serializable
 internal data class PatternDoc(val text: String, val regex: Boolean = false)
 
 @Serializable
-internal data class GuardDoc(val name: String, val pattern: PatternDoc, val pair: PatternDoc? = null, val enabled: Boolean = true)
+internal data class GuardDoc(
+    val name: String,
+    val pattern: PatternDoc,
+    val pair: PatternDoc? = null,
+    val enabled: Boolean = true,
+    /** Informational on export; derived from the fields below on import. */
+    val type: String? = null,
+    val window: Int = 0,
+    val stages: List<String> = emptyList(),
+    val severity: String = "CAUTION",
+    val silent: Boolean = false,
+    val tag: String? = null,
+    val category: String? = null,
+)
 
 @Serializable
 internal data class TemplateDoc(val title: String, val body: String)
@@ -40,6 +58,7 @@ internal data class PackDoc(
     val rules: JsonElement? = null,
     val guard: List<GuardDoc>? = null,
     val templates: List<TemplateDoc>? = null,
+    val flags: List<GuardDoc>? = null,
 )
 
 object PackCodec {
@@ -51,12 +70,34 @@ object PackCodec {
     private fun PatternDoc.toPattern() = Pattern(text, if (regex) MatchKind.REGEX else MatchKind.KEYWORD)
     private fun Pattern.toDoc() = PatternDoc(text, kind == MatchKind.REGEX)
 
+    private fun GuardRule.toDoc() = GuardDoc(
+        name, pattern.toDoc(), pair?.toDoc(), enabled, type.name, window,
+        stages.sortedBy { it.ordinal }.map { it.name }, severity.name, silent, tag, category?.name,
+    )
+
+    /** Unknown stage, severity or category names are rejected, so a typo can't silently widen a rule. */
+    private fun rules(docs: List<GuardDoc>): List<GuardRule> = docs.map { d ->
+        GuardRule(
+            name = d.name.trim(),
+            pattern = d.pattern.toPattern(),
+            pair = d.pair?.toPattern(),
+            enabled = d.enabled,
+            window = d.window.coerceIn(0, 50),
+            stages = d.stages.map { s -> Stage.entries.firstOrNull { it.name.equals(s, true) } ?: error("Unknown stage “$s” in rule “${d.name}”") }.toSet(),
+            severity = Severity.entries.firstOrNull { it.name.equals(d.severity, true) } ?: error("Unknown severity “${d.severity}” in rule “${d.name}”"),
+            silent = d.silent,
+            tag = d.tag?.trim()?.ifEmpty { null },
+            category = d.category?.let { c -> Category.entries.firstOrNull { it.name.equals(c, true) } ?: error("Unknown category “$c” in rule “${d.name}”") },
+        )
+    }.filter { it.name.isNotEmpty() && it.pattern.text.isNotBlank() }
+
     fun encode(pack: Pack): String = json.encodeToString(
         PackDoc.serializer(),
         PackDoc(
             rules = pack.rules?.let { json.parseToJsonElement(RuleConfigCodec.encode(it)) },
-            guard = pack.guard?.map { GuardDoc(it.name, it.pattern.toDoc(), it.pair?.toDoc(), it.enabled) },
+            guard = pack.guard?.map { it.toDoc() },
             templates = pack.templates?.map { TemplateDoc(it.title, it.body) },
+            flags = pack.flags?.map { it.toDoc() },
         ),
     )
 
@@ -70,8 +111,8 @@ object PackCodec {
                 require(doc.version in 1..VERSION) { "Pack version ${doc.version} is newer than this app supports" }
                 Pack(
                     rules = doc.rules?.let { RuleConfigCodec.decode(it.toString()).getOrThrow() },
-                    guard = doc.guard?.map { GuardRule(it.name.trim(), it.pattern.toPattern(), it.pair?.toPattern(), it.enabled) }
-                        ?.filter { it.name.isNotEmpty() && it.pattern.text.isNotBlank() },
+                    guard = doc.guard?.let(::rules),
+                    flags = doc.flags?.let(::rules),
                     templates = doc.templates?.map { Template(it.title.trim(), it.body) }?.filter { it.title.isNotEmpty() && it.body.isNotBlank() },
                 )
             }

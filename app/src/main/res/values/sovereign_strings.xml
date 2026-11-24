@@ -123,4 +123,16 @@
     <string name="sv_block_manager_warning">Numbers on Android\'s block list are dropped by the system and never stored. To keep and silence a sender instead, use Quarantine on the conversation\'s card.</string>
     <string name="sv_continue">Continue</string>
     <string name="sv_quarantined">Quarantined: kept and muted</string>
+    <string name="sv_section_flags">Incoming red flags</string>
+    <string name="sv_flags_note">Same format as the draft guard. Add options after \" | \": info, caution, high, silent, tag=x, category=professional, window=N, stages=new,verification_pending. Flags show a badge on received messages; silent, tag and category act on receipt only when you add them. Nothing is ever deleted or answered.</string>
+    <string name="sv_flags_hint">Link: /https?:\/\/\S+/ | info tag=link</string>
+    <string name="sv_confirm_send_setting">Confirm before sending a flagged draft (second tap or long-press)</string>
+    <string name="sv_confirm_send">Tap send again (or long-press) to send anyway.</string>
+    <string name="sv_add_preset">Add a preset pack (added switched off)</string>
+    <string name="sv_preset_added">Preset added, switched off. Review each line, then remove #off to use it.</string>
+    <string name="sv_preview_stage">Card stage for the test</string>
+    <string name="sv_stage_none">No card</string>
+    <string name="sv_flag_quarantine">Quarantine &amp; mute sender (reversible)</string>
+    <string name="sv_flag_deflect">Insert a deflection template (doesn\'t send)</string>
+    <string name="sv_flag_dismiss">Dismiss this match</string>
 </resources>

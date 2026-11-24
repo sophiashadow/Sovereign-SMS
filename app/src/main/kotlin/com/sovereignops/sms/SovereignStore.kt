@@ -78,11 +78,21 @@ class SovereignStore(context: Context) {
         get() = sealed.get(KEY_GUARD)?.let { PackCodec.decode(it).getOrNull()?.guard } ?: emptyList()
         set(value) { sealed.put(KEY_GUARD, PackCodec.encode(Pack(guard = value))) }
 
+    /** Incoming red-flag rules, encrypted like the guard; empty until the user adds some. */
+    var flagRules: List<GuardRule>
+        get() = sealed.get(KEY_FLAGS)?.let { PackCodec.decode(it).getOrNull()?.flags } ?: emptyList()
+        set(value) { sealed.put(KEY_FLAGS, PackCodec.encode(Pack(flags = value))) }
+
+    /** Ask for a second tap (or long-press) before sending a draft the guard flagged. */
+    var confirmFlaggedSend: Boolean
+        get() = prefs.getBoolean(KEY_CONFIRM_SEND, true)
+        set(value) = prefs.edit().putBoolean(KEY_CONFIRM_SEND, value).apply()
+
     var templates: List<Template>
         get() = sealed.get(KEY_TEMPLATES)?.let { PackCodec.decode(it).getOrNull()?.templates } ?: emptyList()
         set(value) { sealed.put(KEY_TEMPLATES, PackCodec.encode(Pack(templates = value))) }
 
-    fun exportPack(): String = PackCodec.encode(Pack(ruleConfig, guardRules, templates))
+    fun exportPack(): String = PackCodec.encode(Pack(ruleConfig, guardRules, templates, flagRules))
 
     /** Replaces only the sections the file contains; returns an error message if rejected. */
     fun importPack(json: String): String? = PackCodec.decode(json).fold(
@@ -90,6 +100,7 @@ class SovereignStore(context: Context) {
             p.rules?.let { ruleConfig = it }
             p.guard?.let { guardRules = it }
             p.templates?.let { templates = it }
+            p.flags?.let { flagRules = it }
             null
         },
         onFailure = { it.message ?: "Invalid file" },
@@ -106,6 +117,18 @@ class SovereignStore(context: Context) {
         get() = prefs.getBoolean(KEY_ALIAS_NOTIF, true)
         set(value) = prefs.edit().putBoolean(KEY_ALIAS_NOTIF, value).apply()
 
+    /** Tags added on receipt by keyword and flag rules, per conversation. */
+    fun threadTags(threadId: Long): Set<String> = prefs.getStringSet("$KEY_TAGS$threadId", null).orEmpty()
+
+    fun addThreadTags(threadId: Long, tags: Set<String>) {
+        if (tags.isEmpty()) return
+        val now = threadTags(threadId)
+        if (now.containsAll(tags)) return
+        prefs.edit().putStringSet("$KEY_TAGS$threadId", (now + tags).toSet()).apply()
+    }
+
+    fun clearThreadTags(threadId: Long) = prefs.edit().remove("$KEY_TAGS$threadId").apply()
+
     var heldCount: Int
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
@@ -121,6 +144,9 @@ class SovereignStore(context: Context) {
         private const val KEY_MODE = "workspace_mode"
         private const val KEY_GUARD = "guard"
         private const val KEY_TEMPLATES = "templates"
+        private const val KEY_FLAGS = "flags"
+        private const val KEY_TAGS = "tags_"
+        private const val KEY_CONFIRM_SEND = "confirm_flagged_send"
         private const val KEY_CHECKLIST = "checklist_items"
         private const val KEY_ALIAS_NOTIF = "alias_in_notifications"
     }

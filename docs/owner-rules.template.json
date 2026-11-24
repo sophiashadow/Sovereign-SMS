@@ -1,5 +1,5 @@
 {
-  "_readme": "Template for your private owner-rules.json. Copy it to the phone, fill it in, and import it through Settings > Sovereign SMS > Import. Keep the filled copy out of Git. Keys starting with _ are comments and are ignored. Leave out any section (rules, guard, templates) to keep what the app already has.",
+  "_readme": "Template for your private owner-rules.json. Copy it to the phone, fill it in, and import it through Settings > Sovereign SMS > Import. Keep the filled copy out of Git. Keys starting with _ are comments and are ignored. Leave out any section (rules, guard, flags, templates) to keep what the app already has.",
   "format": "sovereign-sms/pack",
   "version": 1,
   "rules": {
@@ -30,7 +30,16 @@
     { "_readme": "Warns above the composer when a draft contains this. regex=false means plain text, case-insensitive.",
       "name": "Protected term", "pattern": { "text": "REPLACE_WITH_A_WORD_YOU_NEVER_SEND", "regex": false }, "enabled": true },
     { "_readme": "Pair rule: warns only when both appear in the same draft.",
-      "name": "Price next to a term", "pattern": { "text": "\\$\\s?\\d+", "regex": true }, "pair": { "text": "REPLACE_WITH_TERM", "regex": false }, "enabled": false }
+      "name": "Price next to a term", "pattern": { "text": "\\$\\s?\\d+", "regex": true }, "pair": { "text": "REPLACE_WITH_TERM", "regex": false }, "enabled": false },
+    { "_readme": "PAIR_MATCH with a window: warns when the pair term is in the draft and the first term was in one of the thread's last N messages.",
+      "name": "Term after earlier mention", "pattern": { "text": "REPLACE_WITH_EARLIER_TERM", "regex": false }, "pair": { "text": "REPLACE_WITH_DRAFT_TERM", "regex": false }, "window": 5, "enabled": false },
+    { "_readme": "CONTEXT_GUARD: only applies when the thread's card stage is listed. Stages: NEW, INFO_REQUESTED, VERIFICATION_PENDING, VERIFIED, REGULAR, DECLINED.",
+      "name": "Sensitive text to unscreened thread", "pattern": { "text": "REPLACE_WITH_SENSITIVE_TERM", "regex": false }, "stages": ["NEW", "VERIFICATION_PENDING"], "enabled": false }
+  ],
+  "flags": [
+    { "_readme": "Incoming red flags: same shape as guard rules. severity: INFO, CAUTION, HIGH_RISK. Receipt actions are opt-in: silent (no sound), tag, category (PERSONAL, PROFESSIONAL, UNKNOWN; only set when the thread has none). Nothing is ever deleted, forwarded or answered. 'type' is written on export for reading and ignored on import.",
+      "name": "Unsolicited link", "pattern": { "text": "https?://\\S+", "regex": true }, "severity": "INFO", "tag": "link", "enabled": false },
+    { "name": "Asks for a received code", "pattern": { "text": "\\b(send|give|forward)( me)? (the|your) (code|otp)\\b", "regex": true }, "severity": "HIGH_RISK", "silent": false, "enabled": false }
   ],
   "templates": [
     { "title": "Info request", "body": "Thanks for reaching out. To check availability, please send your name, the time you'd like, how long, and the general area." }

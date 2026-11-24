@@ -211,3 +211,28 @@ class RuleEngineTest {
         assertFalse(OneTimeCodes.looksLikeCode("code review tomorrow"))
     }
 }
+
+class FlagRulesTest {
+    private val base = IncomingMessage("+19195550142", false, "hi", ConversationPolicy.DEFAULT, java.time.LocalDateTime.of(2026, 1, 5, 12, 0), null)
+
+    @Test
+    fun `silent flag silences and tags`() {
+        val d = RuleEngine.evaluate(RuleConfig(), base.copy(flags = listOf(FlagSignal("Link", silent = true, tag = "link"))))
+        org.junit.Assert.assertEquals(Alert.SILENT, d.alert)
+        org.junit.Assert.assertEquals(RuleId.FLAG_SILENT, d.decidedBy)
+        org.junit.Assert.assertEquals(setOf("link"), d.tags)
+    }
+
+    @Test
+    fun `badge-only flag does not change the alert`() {
+        val d = RuleEngine.evaluate(RuleConfig(), base.copy(flags = listOf(FlagSignal("Link", silent = false, tag = null))))
+        org.junit.Assert.assertEquals(Alert.ALERT, d.alert)
+        org.junit.Assert.assertTrue(d.explanation.any { it.contains("Flag “Link”") })
+    }
+
+    @Test
+    fun `priority conversation beats a silent flag`() {
+        val d = RuleEngine.evaluate(RuleConfig(), base.copy(conversationPolicy = ConversationPolicy.PRIORITY, flags = listOf(FlagSignal("x", true, null))))
+        org.junit.Assert.assertEquals(Alert.ALERT, d.alert)
+    }
+}

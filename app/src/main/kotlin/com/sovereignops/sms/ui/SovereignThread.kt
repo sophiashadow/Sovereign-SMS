@@ -25,6 +25,12 @@ object SovereignThread {
         )
     }
 
+    /** What the draft guard knows: recent bodies (both directions) and the card stage. */
+    fun guardContext(threadId: Long, messages: List<Message>) = com.sovereignops.sms.core.guard.GuardContext(
+        history = messages.takeLast(SovereignFlags.HISTORY).map { it.body },
+        stage = VaultCache.card(threadId)?.stage,
+    )
+
     /** Alias for the header when set; null keeps upstream's title. */
     fun title(threadId: Long): String? = VaultCache.card(threadId)?.alias
 }

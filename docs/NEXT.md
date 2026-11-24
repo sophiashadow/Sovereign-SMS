@@ -6,7 +6,7 @@
 - There's one quiet-hours window in the UI. Extra windows can be imported through JSON and are kept.
 - The held summary counts messages but doesn't list them. It clears when the inbox opens.
 - Slice A (vault, cards, quarantine list) is done; Slices B–F are in progress on this branch.
-- The draft guard warns only. A confirm-before-send step is planned for Slice B.
+- The draft guard warns and asks for a second tap; it never blocks. Pair rules with a window use the thread history in the conversation view and the badge, but not at receipt time (receipt sees only the new message).
 - Known/unknown: a sender with a card (alias or stage) is known. Otherwise the inbox compares the title with the number; the receiver uses a Contacts lookup.
 - Room schemas are generated to `app/schemas/` but not committed (upstream ignores that folder); vault schema is version 1.
 - Templates and guard rules are stored with Android Keystore AES-GCM. If a key is lost, the old ciphertext is kept under `unreadable_*` rather than being overwritten.

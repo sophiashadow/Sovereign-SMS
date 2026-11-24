@@ -383,8 +383,10 @@ class ThreadAdapter(
                 }
             }
 
+            svFlagBadge.beGone() // Sovereign SMS
             if (message.isReceivedMessage()) {
                 setupReceivedMessageView(messageBinding = this, message = message)
+                com.sovereignops.sms.ui.SovereignFlags.bind(activity as SimpleActivity, svFlagBadge, message, { com.sovereignops.sms.ui.SovereignFlags.historyBefore(currentList, message) }) { notifyItemChanged(holder.bindingAdapterPosition) } // Sovereign SMS
             } else {
                 setupSentMessageView(messageBinding = this, message = message)
             }

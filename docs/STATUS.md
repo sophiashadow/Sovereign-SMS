@@ -23,6 +23,13 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | D | Response library: insert at cursor from the conversation menu, never sends; Keystore-encrypted | tested (4); menu compiled |
 | D | Pack import/export (`sovereign-sms/pack` v1: rules + guard + templates), neutral starters off by default | tested (5 + template file) |
 | C | Rules JSON codec: rejects bad files and never crashes | tested (3) |
+| B | One pattern engine both ways: FORBIDDEN_TERM, PAIR_MATCH (same text, or A in the thread's last N messages), CONTEXT_GUARD (card stage); `#off`; options after ` \| ` | tested (BidirectionalGuardTest 9) |
+| B | Incoming red-flag badges (INFO / CAUTION / HIGH_RISK) with matched text; triage: Quarantine & mute (reversible), insert deflection template (never sends), dismiss match (stored in vault) | compiled |
+| B | Opt-in receipt actions per flag: silent, tag, category (only if unset). Never deletes, forwards or replies | silence/tags tested in the engine (3); receipt wiring compiled |
+| B | Confirm-send gate: a flagged draft needs a second tap or a long-press within 8 s; can be switched off | compiled |
+| B | Preset packs, added switched off: Solo Operator — Boundary & Screening Starter; Unsolicited Link & Scam Signals; Shared-SIM Quiet Hours Starter | tested (neutral, disabled, regexes compile, synthetic samples) |
+| B | Pack schema: `flags` section and guard `window`/`stages`/`severity`/`silent`/`tag`/`category`; unknown enum names reject the file | tested |
+| B | Rule Sandbox: the existing test-a-message preview now shows incoming flags, tags and stage-dependent guard results | compiled |
 | C | Text editing of keyword and priority lists (including disabled rules) | tested (5) |
 | C | Quiet channel, held summary notification, summary cleared when the inbox opens | compiled |
 | C | Settings screen: toggles, focus, quiet window, actions, cooldown, lists, preview, JSON import/export | compiled |
@@ -39,4 +46,4 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | G | Workload insights | not started |
 | — | Signed release build | not done (no signing key; needs owner authorisation) |
 
-Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice A) had 66 tests with 0 failures and 0 errors.
+Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice B) had 83 tests with 0 failures and 0 errors.

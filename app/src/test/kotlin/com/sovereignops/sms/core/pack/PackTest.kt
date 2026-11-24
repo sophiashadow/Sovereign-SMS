@@ -56,8 +56,77 @@ class OwnerTemplateTest {
     fun `shipped owner-rules template imports cleanly`() {
         val file = listOf("../docs/owner-rules.template.json", "docs/owner-rules.template.json").map { java.io.File(it) }.first { it.exists() }
         val p = PackCodec.decode(file.readText()).getOrThrow()
-        assertEquals(2, p.guard!!.size)
+        assertEquals(4, p.guard!!.size)
+        assertEquals(listOf(com.sovereignops.sms.core.guard.GuardType.FORBIDDEN_TERM, com.sovereignops.sms.core.guard.GuardType.PAIR_MATCH,
+            com.sovereignops.sms.core.guard.GuardType.PAIR_MATCH, com.sovereignops.sms.core.guard.GuardType.CONTEXT_GUARD), p.guard!!.map { it.type })
+        assertEquals(2, p.flags!!.size)
+        assertTrue(p.flags!!.none { it.enabled })
         assertEquals(setOf(com.sovereignops.sms.core.rules.Category.PROFESSIONAL, com.sovereignops.sms.core.rules.Category.UNKNOWN), p.rules!!.quietHoursCategories)
         assertEquals(1, p.templates!!.size)
+    }
+}
+
+class PresetAndFlagPackTest {
+    @Test
+    fun `flags and extended guard fields round trip through a pack`() {
+        val flags = listOf(
+            com.sovereignops.sms.core.guard.GuardRule(
+                "Link", com.sovereignops.sms.core.guard.Pattern("https?://\\S+", com.sovereignops.sms.core.guard.MatchKind.REGEX),
+                severity = com.sovereignops.sms.core.guard.Severity.INFO, silent = true, tag = "link",
+                category = com.sovereignops.sms.core.rules.Category.UNKNOWN,
+            ),
+        )
+        val guard = listOf(
+            com.sovereignops.sms.core.guard.GuardRule(
+                "Ctx", com.sovereignops.sms.core.guard.Pattern("Ashford", com.sovereignops.sms.core.guard.MatchKind.KEYWORD),
+                stages = setOf(com.sovereignops.sms.core.crm.Stage.NEW), window = 3,
+            ),
+        )
+        val p = PackCodec.decode(PackCodec.encode(Pack(guard = guard, flags = flags))).getOrThrow()
+        assertEquals(flags, p.flags)
+        assertEquals(guard, p.guard)
+        assertTrue(PackCodec.encode(Pack(guard = guard)).contains("\"type\": \"CONTEXT_GUARD\""))
+    }
+
+    @Test
+    fun `unknown severity or stage rejects the file`() {
+        val bad = """{"format":"sovereign-sms/pack","version":1,"flags":[{"name":"x","pattern":{"text":"y"},"severity":"LOUD"}]}"""
+        assertTrue(PackCodec.decode(bad).isFailure)
+        val bad2 = """{"format":"sovereign-sms/pack","version":1,"guard":[{"name":"x","pattern":{"text":"y"},"stages":["NOPE"]}]}"""
+        assertTrue(PackCodec.decode(bad2).isFailure)
+    }
+
+    @Test
+    fun `presets ship disabled and neutral`() {
+        assertEquals(3, Presets.all.size)
+        val digits = Regex("\\d{7,}")
+        Presets.all.forEach { preset ->
+            val rules = preset.pack.guard.orEmpty() + preset.pack.flags.orEmpty()
+            assertTrue(preset.title, rules.isNotEmpty())
+            assertTrue(preset.title, rules.none { it.enabled })
+            rules.forEach { assertTrue(it.name, !digits.containsMatchIn(it.pattern.text)) }
+            // Every regex compiles.
+            rules.filter { it.pattern.kind == com.sovereignops.sms.core.guard.MatchKind.REGEX }.forEach { Regex(it.pattern.text) }
+            assertTrue(PackCodec.decode(PackCodec.encode(preset.pack)).isSuccess)
+        }
+        assertTrue(Presets.sharedSimKeywords.none { it.enabled })
+    }
+
+    @Test
+    fun `scam preset flags synthetic samples when switched on`() {
+        val on = Presets.scamSignals.pack.flags!!.map { it.copy(enabled = true) }
+        val r = com.sovereignops.sms.core.guard.DraftGuard.check("Account locked, verify your account at bit.ly/xyz", on)
+        assertEquals(setOf("Link", "Shortened link", "Account-verify bait"), r.hits.map { it.rule.name }.toSet())
+    }
+}
+
+class LinkPresetTest {
+    private val link = Presets.scamSignals.pack.flags!!.first { it.name == "Link" }.copy(enabled = true)
+    private fun hits(s: String) = com.sovereignops.sms.core.guard.DraftGuard.check(s, listOf(link)).warn
+
+    @Test
+    fun `link rule catches schemes, www and bare domains but not plain prose`() {
+        listOf("go to https://example.invalid/x", "www.example.com", "see example.com/path", "short.ly").forEach { assertTrue(it, hits(it)) }
+        listOf("see you at 7. ok", "e.g. tomorrow", "fine.thanks").forEach { assertTrue(it, !hits(it)) }
     }
 }

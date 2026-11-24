@@ -15,6 +15,8 @@ import org.fossify.commons.helpers.ensureBackgroundThread
 object VaultCache {
     @Volatile var cards: Map<Long, Card> = emptyMap(); private set
     @Volatile var quarantine: Set<String> = emptySet(); private set
+    /** Dismissed flag matches as "messageKey|rule". */
+    @Volatile var dismissed: Set<String> = emptySet(); private set
     @Volatile var loaded = false; private set
     @Volatile var version = 0; private set
 
@@ -26,6 +28,7 @@ object VaultCache {
             val dao = Vault.dao(context)
             cards = dao.cards().associate { it.threadId to it.toCard() }
             quarantine = dao.quarantine().map { it.address }.toSet()
+            dismissed = dao.allDismissals().map { "${it.messageKey}|${it.rule}" }.toSet()
             loaded = true
             version++
         }
@@ -35,6 +38,15 @@ object VaultCache {
     fun ensure(context: Context, then: () -> Unit) = if (loaded) then() else load(context, then)
 
     fun card(threadId: Long): Card? = cards[threadId]
+
+    fun isDismissed(messageKey: String, rule: String) = "$messageKey|$rule" in dismissed
+
+    /** Call on a background thread. */
+    fun dismiss(context: Context, messageKey: String, rule: String) {
+        Vault.dao(context).dismiss(DismissalRow(messageKey, rule))
+        dismissed = dismissed + "$messageKey|$rule"
+        version++
+    }
 
     fun isQuarantined(address: String): Boolean {
         val n = Addresses.normalize(address).ifEmpty { address.trim().lowercase() }

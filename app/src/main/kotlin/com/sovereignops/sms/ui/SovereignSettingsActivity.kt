@@ -7,6 +7,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.SovereignStore
 import com.sovereignops.sms.core.crm.Checklist
+import com.sovereignops.sms.core.crm.Stage
+import com.sovereignops.sms.core.guard.GuardContext
+import com.sovereignops.sms.core.pack.Presets
+import com.sovereignops.sms.core.rules.FlagSignal
 import com.sovereignops.sms.core.guard.DraftGuard
 import com.sovereignops.sms.core.guard.GuardText
 import com.sovereignops.sms.core.pack.Starters
@@ -49,6 +53,7 @@ class SovereignSettingsActivity : SimpleActivity() {
     private var quietOn = false
     private var extraWindows: List<TimeWindow> = emptyList()
     private var loading = false
+    private var previewStage: Stage? = null
 
     private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -113,6 +118,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         binding.svGuard.setText(GuardText.format(store.guardRules))
         binding.svTemplates.setText(Templates.format(store.templates))
         binding.svChecklist.setText(Checklist.format(store.checklistItems))
+        binding.svFlags.setText(GuardText.format(store.flagRules))
         loading = false
         render()
     }
@@ -125,6 +131,9 @@ class SovereignSettingsActivity : SimpleActivity() {
         val c = store.ruleConfig
         svPreserve.isChecked = store.preserveScreened
         svAliasNotif.isChecked = store.aliasInNotifications
+        svConfirmSend.isChecked = store.confirmFlaggedSend
+        svPresets.text = Presets.all.joinToString(" · ") { it.title.substringBefore(" —") }
+        svPreviewStage.text = previewStage?.label ?: getString(R.string.sv_stage_none)
         svRulesEnabled.isChecked = c.enabled
         svFocus.text = c.focusUntil?.takeIf { it.isAfter(LocalDateTime.now()) }
             ?.let { getString(R.string.sv_focus_until, it.format(DateTimeFormatter.ofPattern("EEE HH:mm"))) }
@@ -139,7 +148,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         svUnknownAction.text = alertName(c.unknownSenderAction)
         svQuietPersonal.isChecked = Category.PERSONAL in c.quietHoursCategories
         svOffDuty.text = alertName(c.offDutyAction)
-        val invalid = DraftGuard.check("", store.guardRules).invalid.map { it.name }
+        val invalid = (DraftGuard.check("", store.guardRules).invalid + DraftGuard.check("", store.flagRules).invalid).map { it.name }
         svGuardInvalid.text = getString(R.string.sv_guard_invalid, invalid.distinct().joinToString(", "))
         svGuardInvalid.beVisibleIf(invalid.isNotEmpty())
         svCodes.isChecked = c.alertOneTimeCodes
@@ -169,6 +178,16 @@ class SovereignSettingsActivity : SimpleActivity() {
         svPreserveHolder.setOnClickListener { svPreserve.toggle(); store.preserveScreened = svPreserve.isChecked }
         svRulesEnabledHolder.setOnClickListener { svRulesEnabled.toggle(); edit { it.copy(enabled = svRulesEnabled.isChecked) } }
         svAliasNotifHolder.setOnClickListener { svAliasNotif.toggle(); store.aliasInNotifications = svAliasNotif.isChecked }
+        svConfirmSendHolder.setOnClickListener { svConfirmSend.toggle(); store.confirmFlaggedSend = svConfirmSend.isChecked }
+        svPresetsHolder.setOnClickListener { pickPreset() }
+        svPreviewStageHolder.setOnClickListener {
+            val options = listOf<Stage?>(null) + Stage.entries
+            val items = ArrayList(options.mapIndexed { i, s -> RadioItem(i, s?.label ?: getString(R.string.sv_stage_none), i) })
+            RadioGroupDialog(this@SovereignSettingsActivity, items, options.indexOf(previewStage), R.string.sv_preview_stage) { i ->
+                previewStage = options[i as Int]
+                render()
+            }
+        }
         svCodesHolder.setOnClickListener { svCodes.toggle(); edit { it.copy(alertOneTimeCodes = svCodes.isChecked) } }
 
         svFocusHolder.setOnClickListener {
@@ -244,6 +263,11 @@ class SovereignSettingsActivity : SimpleActivity() {
         if (guard != store.guardRules) store.guardRules = guard
         val templates = Templates.parse(binding.svTemplates.text.toString())
         if (templates != store.templates) store.templates = templates
+        val flags = GuardText.parse(binding.svFlags.text.toString())
+        if (flags != store.flagRules) {
+            store.flagRules = flags
+            SovereignFlags.invalidate()
+        }
         val checklist = Checklist.parse(binding.svChecklist.text.toString())
         if (checklist != store.checklistItems) store.checklistItems = checklist
     }
@@ -263,6 +287,29 @@ class SovereignSettingsActivity : SimpleActivity() {
         toast(R.string.sv_starters_added)
     }
 
+    /** Appends a preset's rules, switched off, skipping names that already exist. */
+    private fun pickPreset() {
+        saveText()
+        val items = ArrayList(Presets.all.mapIndexed { i, p -> RadioItem(i, p.title, i) })
+        RadioGroupDialog(this, items, -1, R.string.sv_add_preset) { i ->
+            val preset = Presets.all[i as Int]
+            fun <T> addNew(have: List<T>, add: List<T>, key: (T) -> String): List<T> {
+                val names = have.map(key).toSet()
+                return have + add.filter { key(it) !in names }.map { it }
+            }
+            preset.pack.guard?.let { g -> store.guardRules = addNew(store.guardRules, g.map { it.copy(enabled = false) }) { it.name } }
+            preset.pack.flags?.let { f -> store.flagRules = addNew(store.flagRules, f.map { it.copy(enabled = false) }) { it.name } }
+            if (preset == Presets.sharedSimQuiet) {
+                val c = store.ruleConfig
+                val kws = addNew(c.keywordRules, Presets.sharedSimKeywords.map { it.copy(enabled = false) }) { it.keyword.lowercase() }
+                store.ruleConfig = c.copy(keywordRules = kws.mapIndexed { n, k -> k.copy(id = "k${n + 1}") })
+            }
+            SovereignFlags.invalidate()
+            load()
+            toast(R.string.sv_preset_added)
+        }
+    }
+
     private fun preview() {
         saveText()
         val message = IncomingMessage(
@@ -273,11 +320,17 @@ class SovereignSettingsActivity : SimpleActivity() {
             receivedAt = LocalDateTime.now(),
             lastAlertAt = null,
         )
-        val d = RuleEngine.evaluate(store.ruleConfig, message)
-        val tags = if (d.tags.isEmpty()) "" else "\nTags: " + d.tags.sorted().joinToString(", ")
-        val guard = DraftGuard.check(message.body, store.guardRules)
+        val ctx = GuardContext(stage = previewStage)
+        val flagHits = DraftGuard.check(message.body, store.flagRules, ctx)
+        val withFlags = RuleEngine.evaluate(
+            store.ruleConfig,
+            message.copy(flags = flagHits.hits.map { FlagSignal(it.rule.name, it.rule.silent, it.rule.tag) }),
+        )
+        val flagText = if (flagHits.warn) "\nIncoming flags: " + DraftGuard.summary(flagHits) else ""
+        val guard = DraftGuard.check(message.body, store.guardRules, ctx)
         val guardText = if (guard.warn) "\nAs a draft: " + DraftGuard.summary(guard) else ""
-        binding.svPreviewRun.text = alertName(d.alert) + " — " + d.explanation.joinToString("\n") + tags + guardText
+        val tagText = if (withFlags.tags.isEmpty()) "" else "\nTags: " + withFlags.tags.sorted().joinToString(", ")
+        binding.svPreviewRun.text = alertName(withFlags.alert) + " — " + withFlags.explanation.joinToString("\n") + tagText + flagText + guardText
     }
 
     companion object {

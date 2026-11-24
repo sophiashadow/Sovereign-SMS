@@ -885,6 +885,11 @@ class ThreadActivity : SimpleActivity() {
             }
 
             threadSendMessage.setOnLongClickListener {
+                // Sovereign SMS: long-press confirms a flagged draft that is waiting for confirmation.
+                if (com.sovereignops.sms.ui.SovereignComposer.isArmed(threadTypeMessage.value)) {
+                    sendMessage()
+                    return@setOnLongClickListener true
+                }
                 if (!isScheduledMessage) {
                     launchScheduleSendDialog()
                 }
@@ -892,7 +897,8 @@ class ThreadActivity : SimpleActivity() {
             }
 
             threadSendMessage.isClickable = false
-            com.sovereignops.sms.ui.SovereignComposer.attachGuard(this@ThreadActivity, threadTypeMessage, binding.sovereignGuardBanner) // Sovereign SMS
+            com.sovereignops.sms.ui.SovereignComposer.attachGuard(this@ThreadActivity, threadTypeMessage, binding.sovereignGuardBanner) { com.sovereignops.sms.ui.SovereignThread.guardContext(threadId, messages) } // Sovereign SMS
+            com.sovereignops.sms.ui.SovereignFlags.composer = java.lang.ref.WeakReference(threadTypeMessage) // Sovereign SMS
             threadTypeMessage.onTextChangeListener {
                 messageToResend = null
                 checkSendMessageAvailability()
@@ -1604,6 +1610,7 @@ class ThreadActivity : SimpleActivity() {
             showErrorToast(getString(org.fossify.commons.R.string.unknown_error_occurred))
             return
         }
+        if (!com.sovereignops.sms.ui.SovereignComposer.confirmSend(this, text, binding.sovereignGuardBanner)) return // Sovereign SMS
         scrollToBottom()
 
         text = removeDiacriticsIfNeeded(text)
