@@ -97,6 +97,7 @@ class SettingsActivity : SimpleActivity() {
         super.onResume()
         setupTopAppBar(binding.settingsAppbar, NavigationIcon.Arrow)
 
+        setupSovereign() // Sovereign SMS
         setupCustomizeColors()
         setupCustomizeNotifications()
         setupUseEnglish()
@@ -158,6 +159,13 @@ class SettingsActivity : SimpleActivity() {
     override fun onPause() {
         super.onPause()
         blockedNumbersAtPause = getBlockedNumbers().hashCode()
+    }
+
+    // Sovereign SMS: rules and screening screen
+    private fun setupSovereign() = binding.apply {
+        settingsSovereignHolder.setOnClickListener {
+            startActivity(Intent(this@SettingsActivity, com.sovereignops.sms.ui.SovereignSettingsActivity::class.java))
+        }
     }
 
     private fun setupCustomizeColors() = binding.apply {

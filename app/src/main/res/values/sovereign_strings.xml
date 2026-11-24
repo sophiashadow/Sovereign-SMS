@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Sovereign SMS strings (English only for now; not part of upstream translations). -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
     <string name="sovereign_channel_quiet">Quiet messages</string>
     <string name="sovereign_channel_held">Held messages summary</string>
     <string name="sovereign_held_title">Messages held</string>
@@ -8,4 +8,68 @@
         <item quantity="one">%d message arrived during focus or quiet hours</item>
         <item quantity="other">%d messages arrived during focus or quiet hours</item>
     </plurals>
+    <string name="sv_title">Sovereign rules</string>
+    <string name="sv_entry">Rules and screening</string>
+    <string name="sv_entry_section">Sovereign SMS</string>
+    <string name="sv_section_screening">Screening</string>
+    <string name="sv_preserve_screened">Keep screened messages</string>
+    <string name="sv_preserve_note">Messages from blocked numbers, blocked keywords and unknown senders are stored read and archived, never deleted. Turn off to restore upstream discard. Numbers on the phone\'s system block list may never reach this app.</string>
+    <string name="sv_section_rules">Notification rules</string>
+    <string name="sv_rules_enabled">Use notification rules</string>
+    <string name="sv_focus">Focus mode</string>
+    <string name="sv_section_quiet">Quiet hours</string>
+    <string name="sv_quiet_enabled">Quiet hours on</string>
+    <string name="sv_quiet_start">Start</string>
+    <string name="sv_quiet_end">End</string>
+    <string name="sv_quiet_action">During quiet hours</string>
+    <string name="sv_section_senders">Senders</string>
+    <string name="sv_unknown_action">Unknown senders</string>
+    <string name="sv_codes">Always alert one-time codes</string>
+    <string name="sv_cooldown">Per-conversation cooldown</string>
+    <string name="sv_section_priority">Priority numbers</string>
+    <string name="sv_priority_note">One number per line. These always alert, even in focus or quiet hours.</string>
+    <string name="sv_priority_hint">+19195550142</string>
+    <string name="sv_section_keywords">Keyword rules</string>
+    <string name="sv_keywords_note">One per line: keyword, keyword =&gt; tag, add !priority or !quiet at the end. #off keeps a rule disabled.</string>
+    <string name="sv_keywords_hint">invoice =&gt; billing\nurgent !priority</string>
+    <string name="sv_section_preview">Test a message</string>
+    <string name="sv_preview_address_hint">Sender number</string>
+    <string name="sv_preview_body_hint">Message text</string>
+    <string name="sv_preview_known">Sender is a contact</string>
+    <string name="sv_preview_run">Run rules on this message</string>
+    <string name="sv_section_portability">Rules file</string>
+    <string name="sv_export">Export rules (JSON)</string>
+    <string name="sv_import">Import rules (JSON)</string>
+    <string name="sv_alert">Alert</string>
+    <string name="sv_silent">Deliver silently</string>
+    <string name="sv_held">Hold in a summary</string>
+    <string name="sv_off">Off</string>
+    <string name="sv_focus_1h">For 1 hour</string>
+    <string name="sv_focus_3h">For 3 hours</string>
+    <string name="sv_focus_morning">Until 08:00</string>
+    <string name="sv_focus_until">On until %s</string>
+    <string name="sv_saved">Rules saved</string>
+    <string name="sv_imported">Rules imported</string>
+    <string name="sv_exported">Rules exported</string>
+    <string name="sv_import_failed">Rules not imported: %s</string>
+    <string name="sv_minutes">%d minutes</string>
+    <string name="sv_extra_windows">Plus %d more window(s) from an imported file</string>
+    <string name="sv_policy">Conversation alerts</string>
+    <string name="sv_policy_default">Follow rules</string>
+    <string name="sv_policy_priority">Priority (always alert)</string>
+    <string name="sv_policy_muted">Muted (deliver silently)</string>
+    <string name="sv_day_1">Mo</string>
+    <string name="sv_day_1_full">Monday</string>
+    <string name="sv_day_2">Tu</string>
+    <string name="sv_day_2_full">Tuesday</string>
+    <string name="sv_day_3">We</string>
+    <string name="sv_day_3_full">Wednesday</string>
+    <string name="sv_day_4">Th</string>
+    <string name="sv_day_4_full">Thursday</string>
+    <string name="sv_day_5">Fr</string>
+    <string name="sv_day_5_full">Friday</string>
+    <string name="sv_day_6">Sa</string>
+    <string name="sv_day_6_full">Saturday</string>
+    <string name="sv_day_7">Su</string>
+    <string name="sv_day_7_full">Sunday</string>
 </resources>

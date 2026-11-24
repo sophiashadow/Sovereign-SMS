@@ -395,6 +395,7 @@ class ThreadActivity : SimpleActivity() {
             R.id.archive -> archiveConversation()
             R.id.unarchive -> unarchiveConversation()
             R.id.rename_conversation -> renameConversation()
+            R.id.sovereign_policy -> com.sovereignops.sms.ui.SovereignSettingsActivity.pickPolicy(this, threadId) // Sovereign SMS
             R.id.conversation_details -> launchConversationDetails(threadId)
             R.id.add_number_to_contact -> addNumberToContact()
             R.id.copy_number -> copyNumberToClipboard()
