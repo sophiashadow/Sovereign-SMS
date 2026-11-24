@@ -41,7 +41,7 @@
 - Release signing with the owner's own keystore, kept outside the repo; pin its certificate digest. The agent-built release used a throwaway key.
 - Device questions from `ANDROID17_ONEUI_AUDIT.md`: is the default SMS app exempt from Android 17's 3-hour one-time-code hold? Does Advanced Protection block `adb install`? How does One UI show the lock-screen notification?
 - The thread ZIP is not encrypted by design (preservation copy). To keep it private, store it inside an encrypted location or wrap it in a `.sovbak`-style container later.
-- `.sovbak` restore re-links cards to conversations by phone number. Cards with no matching conversation are kept unlinked (not shown in any thread, not in the queue) and carried into the next backup, so a later restore can re-link them. There is no screen yet to view or re-attach unlinked cards by hand.
+- `.sovbak` restore re-links cards to conversations by phone number. Cards with no matching conversation are kept unlinked (not shown in any thread, not in the queue) and carried into the next backup, so a later restore can re-link them. Settings → Cards without a conversation retries the link and offers manual link or delete.
 - Vault schema is now 2 (adds nullable `cards.addresses`). The 1→2 migration has not run on a device.
 - Instrumented (on-device) tests: none exist yet.
 

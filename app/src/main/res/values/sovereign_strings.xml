@@ -245,4 +245,17 @@
     <string name="sv_dur_h_min">%1$d h %2$d min</string>
     <string name="sv_dur_d_h">%1$d d %2$d h</string>
     <string name="sv_hour_range">%1$02d:00–%1$02d:59</string>
+    <string name="sv_unlinked">Cards without a conversation</string>
+    <string name="sv_unlinked_summary">Cards restored from a backup that don\'t match any conversation here yet</string>
+    <string name="sv_unlinked_empty">No unlinked cards.</string>
+    <string name="sv_unlinked_hint">These cards came from a backup, and no conversation on this phone has the same numbers. They are kept, hidden from the inbox and left out of the availability queue. Tap one to link it to a conversation or delete it.</string>
+    <string name="sv_unlinked_relinked">Cards re-linked by number: %d</string>
+    <string name="sv_unlinked_row">%1$s · %2$s · %3$s</string>
+    <string name="sv_unlinked_unnamed">(no alias)</string>
+    <string name="sv_unlinked_link">Link to a conversation…</string>
+    <string name="sv_unlinked_delete">Delete this card</string>
+    <string name="sv_unlinked_delete_confirm">Delete this card and its notes? This can\'t be undone.</string>
+    <string name="sv_unlinked_pick">Choose the conversation</string>
+    <string name="sv_unlinked_no_conv">Every conversation already has a card.</string>
+    <string name="sv_unlinked_linked">Linked</string>
 </resources>

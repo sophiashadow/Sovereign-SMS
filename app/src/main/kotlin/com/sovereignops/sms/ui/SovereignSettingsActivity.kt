@@ -322,6 +322,7 @@ class SovereignSettingsActivity : SimpleActivity() {
             com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SovereignSettingsActivity)
                 .setTitle(R.string.sv_notices).setMessage(text).setPositiveButton(android.R.string.ok, null).show()
         }
+        svUnlinkedHolder.setOnClickListener { SovereignUnlinked.show(this@SovereignSettingsActivity) }
         svRestoreHolder.setOnClickListener {
             saveText()
             reloadOnResume = true

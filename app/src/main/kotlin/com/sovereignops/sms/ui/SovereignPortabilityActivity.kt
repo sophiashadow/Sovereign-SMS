@@ -24,7 +24,6 @@ import com.sovereignops.sms.core.preserve.ArchiveAttachment
 import com.sovereignops.sms.core.preserve.ArchiveDoc
 import com.sovereignops.sms.core.preserve.ArchiveMessage
 import com.sovereignops.sms.core.preserve.ThreadArchive
-import com.sovereignops.sms.core.rules.Addresses
 import com.sovereignops.sms.vault.CardRow
 import com.sovereignops.sms.vault.LedgerRow
 import com.sovereignops.sms.vault.QuarantineRow
@@ -34,6 +33,8 @@ import org.fossify.commons.extensions.toast
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.R
 import org.fossify.messages.activities.SimpleActivity
+import com.sovereignops.sms.core.crm.ConversationNumbers
+import com.sovereignops.sms.core.crm.Relink
 import org.fossify.messages.extensions.conversationsDB
 import org.fossify.messages.extensions.messagesDB
 import java.io.ByteArrayOutputStream
@@ -269,12 +270,8 @@ class SovereignPortabilityActivity : SimpleActivity() {
         ensureBackgroundThread {
             val result = runCatching {
                 val conversations = runCatching { conversationsDB.getNonArchived() + conversationsDB.getAllArchived() }.getOrDefault(emptyList())
-                val incomingCards = Backup.remap(c.cards) { numbers ->
-                    conversations.firstOrNull { conv ->
-                        val local = conv.phoneNumber.split(',').map(String::trim).filter(String::isNotEmpty)
-                        numbers.isNotEmpty() && local.size == numbers.size && numbers.all { n -> local.any { Addresses.sameNumber(it, n) } }
-                    }?.threadId
-                }
+                val numbered = conversations.map { ConversationNumbers(it.threadId, it.phoneNumber.split(',').map(String::trim).filter(String::isNotEmpty)) }
+                val incomingCards = Backup.remap(c.cards) { numbers -> Relink.find(numbers, numbered) }
                 val current = snapshot()
                 val merged = Backup.combine(
                     VaultPart(current.cards, current.quarantine, current.ledger),
