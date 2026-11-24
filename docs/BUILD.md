@@ -18,3 +18,7 @@ allprojects { repositories { maven { url "https://maven-central.storage-download
 Also set `systemProp.org.gradle.internal.repository.max.retries=8` in `~/.gradle/gradle.properties`.
 
 The release build (`assembleFossRelease`) needs `keystore.properties`, which is not in the repository. See `keystore.properties_sample`. Never commit a keystore.
+
+## CI
+
+Upstream's GitHub Actions workflows were removed. They called FossifyOrg's reusable workflows and release secrets, and they ran on schedules that would spend this repository's Actions minutes. The build and tests run locally (see the commands above). Any CI added later should follow the owner's CI budget rule: gated by `CI_ENABLED` and triggered only on `main`.
