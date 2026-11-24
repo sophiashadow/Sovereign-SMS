@@ -127,6 +127,19 @@
             android:name="com.sovereignops.sms.FocusEndingReceiver"
             android:exported="false" />
 
+        <!-- Sovereign SMS daily summary: inexact alarm, plus re-arming after reboot, clock or zone change
+             and app update. Not exported: only our own PendingIntent and system broadcasts reach it. -->
+        <receiver
+            android:name="com.sovereignops.sms.SummaryReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Sovereign SMS preserve / backup / restore; not exported. Files only via the system picker. -->
         <activity
             android:name="com.sovereignops.sms.ui.SovereignPortabilityActivity"

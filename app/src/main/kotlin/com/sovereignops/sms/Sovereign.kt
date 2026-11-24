@@ -97,14 +97,16 @@ object Sovereign {
         )
         val decision = RuleEngine.evaluate(store.ruleConfig, message)
         store.addThreadTags(threadId, decision.tags)
-        trace(context, threadId, decision)
+        trace(context, threadId, decision, category.takeIf { store.summaryEnabled })
         return decision to Workspace.channel(decision, category, regular = card?.stage == com.sovereignops.sms.core.crm.Stage.REGULAR)
     }
 
     const val TRACE_KEEP = 200
 
     /** "Why did this happen?": the rule, outcome and explanation only; never the body or the address. */
-    private fun trace(context: Context, threadId: Long, decision: Decision) = org.fossify.commons.helpers.ensureBackgroundThread {
+    /** Logs the decision and, when daily summaries are on ([countAs] non-null), counts it for today. */
+    private fun trace(context: Context, threadId: Long, decision: Decision, countAs: com.sovereignops.sms.core.rules.Category?) = org.fossify.commons.helpers.ensureBackgroundThread {
+        if (countAs != null) runCatching { SovereignSummary.count(context, decision, countAs) }
         runCatching {
             val dao = com.sovereignops.sms.vault.Vault.dao(context)
             dao.addTrace(

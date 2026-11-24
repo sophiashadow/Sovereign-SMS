@@ -165,6 +165,23 @@ interface VaultDao {
     @Upsert
     fun putCounter(row: CounterRow)
 
+    // Daily summaries: per-day counters named "sum:<yyyy-MM-dd>:<METRIC>". Two statements, each atomic in SQLite,
+    // so concurrent receipts can't lose an increment.
+    @Query("INSERT OR IGNORE INTO counters(name, value) VALUES (:name, 0)")
+    fun ensureCounter(name: String)
+
+    @Query("UPDATE counters SET value = value + 1 WHERE name = :name")
+    fun bumpCounter(name: String)
+
+    @Query("SELECT * FROM counters WHERE name LIKE 'sum:%'")
+    fun summaryCounters(): List<CounterRow>
+
+    @Query("DELETE FROM counters WHERE name LIKE 'sum:%' AND name < :floor")
+    fun pruneSummaryCounters(floor: String)
+
+    @Query("DELETE FROM counters WHERE name LIKE 'sum:%'")
+    fun clearSummaryCounters()
+
     @Insert
     fun addResponseTime(row: ResponseTimeRow)
 

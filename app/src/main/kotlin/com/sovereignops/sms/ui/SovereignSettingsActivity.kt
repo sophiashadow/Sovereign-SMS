@@ -27,6 +27,7 @@ import com.sovereignops.sms.core.rules.FocusTimer
 import com.sovereignops.sms.core.rules.ScheduleText
 import com.sovereignops.sms.core.rules.TimeWindow
 import org.fossify.commons.dialogs.RadioGroupDialog
+import org.fossify.commons.extensions.appLockManager
 import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getTimePickerDialogTheme
@@ -94,7 +95,16 @@ class SovereignSettingsActivity : SimpleActivity() {
         setupMaterialScrollListener(scrollingView = binding.svScrollview, topAppBar = binding.svAppbar)
         wire()
         load()
+        summaryRequested = intent?.getBooleanExtra(com.sovereignops.sms.SovereignSummary.EXTRA_SHOW, false) == true
     }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(com.sovereignops.sms.SovereignSummary.EXTRA_SHOW, false)) summaryRequested = true
+    }
+
+    /** Set by the summary notification; shown on the first resume while the app lock isn't up. */
+    private var summaryRequested = false
 
     override fun onResume() {
         super.onResume()
@@ -105,6 +115,10 @@ class SovereignSettingsActivity : SimpleActivity() {
             load()
         }
         updateTextColors(binding.svScrollview)
+        if (summaryRequested && !(baseConfig.isAppPasswordProtectionOn && appLockManager.isLocked())) {
+            summaryRequested = false
+            showSummary()
+        }
     }
 
     override fun onPause() {
@@ -173,6 +187,13 @@ class SovereignSettingsActivity : SimpleActivity() {
         svTrace.text = getString(R.string.sv_trace_summary)
         svLedger.text = getString(R.string.sv_ledger_summary)
         svInsights.text = getString(R.string.sv_insights_summary)
+        val sched = store.summarySchedule
+        svSummaryEnabled.isChecked = store.summaryEnabled
+        svSummaryNow.text = getString(R.string.sv_summary_now_summary)
+        svSummaryTime.text = sched.time.format(hhmm)
+        svSummaryDays.text = if (sched.days.size == 7) getString(R.string.sv_summary_every_day) else if (sched.days.isEmpty()) getString(R.string.sv_off)
+            else DayOfWeek.entries.filter { it in sched.days }.joinToString(" ") { it.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()) }
+        listOf(svSummaryTimeHolder, svSummaryDaysHolder).forEach { it.beVisibleIf(store.summaryEnabled) }
         svCooldown.text = if (c.cooldownMinutes == 0) getString(R.string.sv_off) else getString(R.string.sv_minutes, c.cooldownMinutes)
         listOf(svQuietStartHolder, svQuietEndHolder, svDaysHolder).forEach { it.beVisibleIf(quietOn) }
         loading = false
@@ -257,6 +278,33 @@ class SovereignSettingsActivity : SimpleActivity() {
         }
         svTraceHolder.setOnClickListener { showTrace() }
         svInsightsHolder.setOnClickListener { showInsights() }
+        svSummaryEnabledHolder.setOnClickListener {
+            svSummaryEnabled.toggle()
+            com.sovereignops.sms.SovereignSummary.setEnabled(this@SovereignSettingsActivity, svSummaryEnabled.isChecked)
+            render()
+        }
+        svSummaryTimeHolder.setOnClickListener {
+            pickTime(store.summarySchedule.time) { t ->
+                store.summarySchedule = store.summarySchedule.copy(time = t)
+                com.sovereignops.sms.SovereignSummary.sync(this@SovereignSettingsActivity)
+                render()
+            }
+        }
+        svSummaryDaysHolder.setOnClickListener {
+            val days = DayOfWeek.entries
+            val checked = BooleanArray(7) { days[it] in store.summarySchedule.days }
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SovereignSettingsActivity)
+                .setTitle(R.string.sv_summary_days)
+                .setMultiChoiceItems(days.map { it.getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault()) }.toTypedArray(), checked) { _, i, on -> checked[i] = on }
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    store.summarySchedule = store.summarySchedule.copy(days = days.filterIndexed { i, _ -> checked[i] }.toSet())
+                    com.sovereignops.sms.SovereignSummary.sync(this@SovereignSettingsActivity)
+                    render()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+        svSummaryNowHolder.setOnClickListener { showSummary() }
         svLedgerHolder.setOnClickListener {
             startActivity(android.content.Intent(this@SovereignSettingsActivity, SovereignLedgerActivity::class.java))
         }
@@ -395,20 +443,31 @@ class SovereignSettingsActivity : SimpleActivity() {
         }
     }
 
+    /** Today so far and yesterday, built on demand from timestamps and the per-day counters. */
+    private fun showSummary() = org.fossify.commons.helpers.ensureBackgroundThread {
+        val text = runCatching {
+            val today = com.sovereignops.sms.SovereignSummary.today(this)
+            val yesterday = com.sovereignops.sms.SovereignSummary.yesterday(this)
+            com.sovereignops.sms.SovereignSummary.describe(this, today) + "\n" +
+                com.sovereignops.sms.SovereignSummary.describe(this, yesterday) + "\n" + getString(R.string.sv_summary_note)
+        }.getOrElse { getString(R.string.sv_summary_failed) }
+        runOnUiThread {
+            if (isFinishing || isDestroyed) return@runOnUiThread
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sv_summary)
+                .setMessage(text)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
+    }
+
     /** Workload figures from message timestamps and direction only; shown, never stored. */
     private fun showInsights() = org.fossify.commons.helpers.ensureBackgroundThread {
         val days = 30 // matches the 30 days written in the sv_insights strings
         val now = System.currentTimeMillis()
         val rows = runCatching { messagesDB.getStamps(((now - days * 86_400_000L) / 1000L).toInt()) }.getOrDefault(emptyList())
         val ins = com.sovereignops.sms.core.insights.Insights.compute(rows.map { it.toStamp() }, now, java.time.ZoneId.systemDefault(), days)
-        fun dur(ms: Long): String {
-            val m = ms / 60_000
-            return when {
-                m < 60 -> getString(R.string.sv_dur_min, m)
-                m < 48 * 60 -> getString(R.string.sv_dur_h_min, m / 60, m % 60)
-                else -> getString(R.string.sv_dur_d_h, m / (24 * 60), m / 60 % 24)
-            }
-        }
+        fun dur(ms: Long) = com.sovereignops.sms.Durations.format(this, ms)
         val text = if (ins.incoming + ins.outgoing == 0) getString(R.string.sv_insights_empty) else buildString {
             appendLine(getString(R.string.sv_insights_volume, ins.incoming, ins.outgoing))
             val hour = ins.busiestHour?.let { getString(R.string.sv_hour_range, it) } ?: "–"

@@ -39,8 +39,16 @@ data class Insights(
         const val REPLY_WINDOW_MILLIS = 24L * 60 * 60 * 1000
 
         /** Computes figures for the last [days] days ending at [now]. Input order doesn't matter. */
-        fun compute(stamps: List<Stamp>, now: Long, zone: ZoneId, days: Int): Insights {
-            val from = now - days * 24L * 60 * 60 * 1000
+        fun compute(stamps: List<Stamp>, now: Long, zone: ZoneId, days: Int): Insights =
+            window(stamps, now - days * 24L * 60 * 60 * 1000, now, zone).copy(days = days)
+
+        /**
+         * Figures for messages in [from]..[to] (inclusive). Waiting ages are measured to [to].
+         * [Insights.days] is the window length rounded down to whole days.
+         */
+        fun window(stamps: List<Stamp>, from: Long, to: Long, zone: ZoneId): Insights {
+            val now = to
+            val days = ((to - from) / (24L * 60 * 60 * 1000)).toInt()
             val inWindow = stamps.filter { it.millis in from..now }
             val byHour = IntArray(24)
             val byDay = DayOfWeek.entries.associateWith { 0 }.toMutableMap()

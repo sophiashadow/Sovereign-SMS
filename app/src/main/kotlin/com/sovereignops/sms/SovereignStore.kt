@@ -2,6 +2,7 @@ package com.sovereignops.sms
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.sovereignops.sms.core.guard.GuardRule
 import com.sovereignops.sms.core.pack.Pack
 import com.sovereignops.sms.core.pack.PackCodec
@@ -149,6 +150,36 @@ class SovereignStore(context: Context) {
         get() = prefs.getBoolean(KEY_SECURE, false)
         set(value) = prefs.edit().putBoolean(KEY_SECURE, value).apply()
 
+    /** Daily summaries: off by default. Turning them on starts per-day counting from now. */
+    var summaryEnabled: Boolean
+        get() = prefs.getBoolean(KEY_SUM_ON, false)
+        set(value) = prefs.edit { putBoolean(KEY_SUM_ON, value) }
+
+    /** When counting started (epoch millis), or 0 when it never has. */
+    var summarySince: Long
+        get() = prefs.getLong(KEY_SUM_SINCE, 0L)
+        set(value) = prefs.edit { putLong(KEY_SUM_SINCE, value) }
+
+    var summarySchedule: com.sovereignops.sms.core.summary.SummarySchedule
+        get() {
+            val d = com.sovereignops.sms.core.summary.SummarySchedule.DEFAULT
+            val minute = prefs.getInt(KEY_SUM_MINUTE, d.time.hour * 60 + d.time.minute).coerceIn(0, 24 * 60 - 1)
+            val mask = prefs.getInt(KEY_SUM_DAYS, 0x7F)
+            return com.sovereignops.sms.core.summary.SummarySchedule(
+                java.time.LocalTime.of(minute / 60, minute % 60),
+                java.time.DayOfWeek.entries.filter { mask and (1 shl it.ordinal) != 0 }.toSet(),
+            )
+        }
+        set(value) = prefs.edit {
+            putInt(KEY_SUM_MINUTE, value.time.hour * 60 + value.time.minute)
+            putInt(KEY_SUM_DAYS, value.days.fold(0) { m, d -> m or (1 shl d.ordinal) })
+        }
+
+    /** Local date (epoch day) of the last delivered summary; one per local date at most. */
+    var summaryLastDay: java.time.LocalDate?
+        get() = prefs.getLong(KEY_SUM_LAST, Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }?.let { java.time.LocalDate.ofEpochDay(it) }
+        set(value) = prefs.edit { if (value == null) remove(KEY_SUM_LAST) else putLong(KEY_SUM_LAST, value.toEpochDay()) }
+
     var heldCount: Int
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
@@ -173,5 +204,10 @@ class SovereignStore(context: Context) {
         private const val KEY_COPY_CODE = "copy_code_action"
         private const val KEY_LOCK_TIMEOUT = "app_lock_timeout"
         private const val KEY_SECURE = "secure_screen"
+        private const val KEY_SUM_ON = "summary_enabled"
+        private const val KEY_SUM_SINCE = "summary_since"
+        private const val KEY_SUM_MINUTE = "summary_minute"
+        private const val KEY_SUM_DAYS = "summary_days"
+        private const val KEY_SUM_LAST = "summary_last_day"
     }
 }
