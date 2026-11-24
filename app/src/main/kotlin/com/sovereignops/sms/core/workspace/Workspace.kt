@@ -12,9 +12,17 @@ enum class ChannelKind { PERSONAL, PROFESSIONAL, UNKNOWN, PRIORITY, OTP, QUIET }
 
 object Workspace {
 
-    /** A user assignment wins; otherwise contacts are personal and everyone else is unknown. */
-    fun resolve(assigned: Category?, isKnownContact: Boolean): Category =
-        assigned ?: if (isKnownContact) Category.PERSONAL else Category.UNKNOWN
+    /**
+     * A user assignment wins. Otherwise a sender with a client card (alias or stage, kept
+     * out of Android Contacts on purpose) is professional, a saved contact is personal,
+     * and everyone else is unknown.
+     */
+    fun resolve(assigned: Category?, isKnownContact: Boolean, hasCard: Boolean = false): Category =
+        assigned ?: when {
+            hasCard -> Category.PROFESSIONAL
+            isKnownContact -> Category.PERSONAL
+            else -> Category.UNKNOWN
+        }
 
     /** Inbox filter for a workspace mode. FOCUS shows only priority conversations. */
     fun visible(mode: WorkspaceMode, category: Category, policy: ConversationPolicy): Boolean = when (mode) {
@@ -29,10 +37,18 @@ object Workspace {
         if (mode == WorkspaceMode.ALL) items else items.filter { visible(mode, category(it), policy(it)) }
 
     /**
-     * Upstream shows a saved contact's name as the conversation title and the raw number
-     * otherwise, so a title with no letters means the sender is not a saved contact.
+     * Whether an inbox row's sender counts as known. Upstream titles a thread with the
+     * contact's name when the number is saved and with the number itself otherwise, so a
+     * title that is the same number means "not in contacts". A client card, a group or a
+     * user-renamed thread always counts as known.
      */
-    fun titleLooksUnsaved(title: String): Boolean = title.isNotBlank() && title.none(Char::isLetter)
+    fun rowIsKnown(title: String, phoneNumber: String, isGroup: Boolean, usesCustomTitle: Boolean, hasCard: Boolean): Boolean = when {
+        hasCard || isGroup || usesCustomTitle -> true
+        title.isBlank() -> false
+        title.trim().equals(phoneNumber.trim(), ignoreCase = true) -> false
+        com.sovereignops.sms.core.rules.Addresses.sameNumber(title, phoneNumber) -> false
+        else -> title.any(Char::isLetter) || com.sovereignops.sms.core.rules.Addresses.normalize(title).isEmpty()
+    }
 
     private val priorityRules = setOf(RuleId.PRIORITY_CONTACT, RuleId.CONVERSATION_PRIORITY, RuleId.KEYWORD_PRIORITY)
 

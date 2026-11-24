@@ -5,9 +5,10 @@
 - Nothing has been installed, device-tested or carrier-tested yet. Only JVM tests and a compile have run.
 - There's one quiet-hours window in the UI. Extra windows can be imported through JSON and are kept.
 - The held summary counts messages but doesn't list them. It clears when the inbox opens.
-- Tags, notes, encrypted annotations (SQLCipher), insights, FLAG_SECURE: not started.
+- Slice A (vault, cards, quarantine list) is done; Slices B–F are in progress on this branch.
 - The draft guard warns only. A confirm-before-send step is planned for Slice B.
-- Known/unknown in the inbox filter is a heuristic: a title with no letters counts as unsaved.
+- Known/unknown: a sender with a card (alias or stage) is known. Otherwise the inbox compares the title with the number; the receiver uses a Contacts lookup.
+- Room schemas are generated to `app/schemas/` but not committed (upstream ignores that folder); vault schema is version 1.
 - Templates and guard rules are stored with Android Keystore AES-GCM. If a key is lost, the old ciphertext is kept under `unreadable_*` rather than being overwritten.
 - No RCS. Upstream Fossify strings and translations remain; Sovereign strings are English only.
 - The debug APK is about 38 MB (uncompressed multi-dex). A minified release will be much smaller.

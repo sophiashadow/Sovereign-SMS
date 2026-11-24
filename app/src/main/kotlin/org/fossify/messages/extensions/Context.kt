@@ -1078,7 +1078,7 @@ fun Context.showReceivedMessageNotification(
                 body = body,
                 threadId = threadId,
                 bitmap = bitmap,
-                sender = senderName,
+                sender = com.sovereignops.sms.Sovereign.senderName(this, threadId, senderName), // Sovereign SMS: alias
                 quiet = quiet,
                 sovereignChannel = channel
             )

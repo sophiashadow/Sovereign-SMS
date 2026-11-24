@@ -5,6 +5,7 @@ import com.google.android.material.chip.ChipGroup
 import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.core.rules.WorkspaceMode
 import com.sovereignops.sms.core.workspace.Workspace
+import com.sovereignops.sms.vault.VaultCache
 import org.fossify.messages.R
 import org.fossify.messages.models.Conversation
 
@@ -29,12 +30,18 @@ object SovereignInbox {
         }
     }
 
+    /** Conversation row title: local alias and screening dot from the vault cache. */
+    fun title(c: Conversation): CharSequence = SovereignCard.decorate(c.threadId, c.title)
+
     fun filter(activity: Activity, conversations: List<Conversation>): List<Conversation> {
         val store = Sovereign.store(activity)
         return Workspace.filter(
             conversations,
             store.workspaceMode,
-            category = { c -> Workspace.resolve(store.category(c.threadId), c.isGroupConversation || !Workspace.titleLooksUnsaved(c.title)) },
+            category = { c ->
+                val hasCard = VaultCache.card(c.threadId) != null
+                Workspace.resolve(store.category(c.threadId), Workspace.rowIsKnown(c.title, c.phoneNumber, c.isGroupConversation, c.usesCustomTitle, hasCard), hasCard)
+            },
             policy = { c -> store.conversationPolicy(c.threadId) },
         )
     }

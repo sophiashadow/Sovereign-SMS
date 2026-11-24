@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Sovereign SMS: nothing app-owned goes to cloud backup (message cache DB, settings,
-     rules). Direct device-to-device transfer stays allowed. SMS/MMS themselves live in
-     the system Telephony provider and are not part of this app's backup. -->
+<!-- Sovereign SMS (Android 12+):
+     - cloud-backup: nothing app-owned goes to Google cloud backup.
+     - device-transfer: the encrypted vault, its wrapped key and the Keystore-sealed
+       settings are excluded. Hardware Keystore keys never migrate, so copies would be
+       unreadable on the new phone; move them with a .sovbak backup instead.
+     SMS/MMS live in the system Telephony provider and are not part of this app's data. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />
@@ -10,4 +13,12 @@
         <exclude domain="sharedpref" />
         <exclude domain="external" />
     </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="sovereign_vault.db" />
+        <exclude domain="database" path="sovereign_vault.db-wal" />
+        <exclude domain="database" path="sovereign_vault.db-shm" />
+        <exclude domain="database" path="sovereign_vault.db-journal" />
+        <exclude domain="sharedpref" path="sovereign_vault_key.xml" />
+        <exclude domain="sharedpref" path="sovereign_sealed.xml" />
+    </device-transfer>
 </data-extraction-rules>

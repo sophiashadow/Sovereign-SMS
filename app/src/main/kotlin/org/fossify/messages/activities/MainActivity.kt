@@ -110,6 +110,7 @@ class MainActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         com.sovereignops.sms.SovereignNotifications.clearHeld(this) // Sovereign SMS
+        com.sovereignops.sms.vault.VaultCache.load(this) { binding.conversationsList.adapter?.notifyDataSetChanged(); com.sovereignops.sms.ui.SovereignCard.recoveredNotice(this) } // Sovereign SMS: aliases, stage dots
         updateMenuColors()
         refreshMenuItems()
 

@@ -95,6 +95,17 @@ class SovereignStore(context: Context) {
         onFailure = { it.message ?: "Invalid file" },
     )
 
+    /** Checklist items shown on every client card; user-editable. */
+    var checklistItems: List<com.sovereignops.sms.core.crm.Checklist.Item>
+        get() = prefs.getString(KEY_CHECKLIST, null)?.let(com.sovereignops.sms.core.crm.Checklist::parse)?.takeIf { it.isNotEmpty() }
+            ?: com.sovereignops.sms.core.crm.Checklist.DEFAULT
+        set(value) = prefs.edit().putString(KEY_CHECKLIST, com.sovereignops.sms.core.crm.Checklist.format(value)).apply()
+
+    /** Show the local alias as the notification sender name. */
+    var aliasInNotifications: Boolean
+        get() = prefs.getBoolean(KEY_ALIAS_NOTIF, true)
+        set(value) = prefs.edit().putBoolean(KEY_ALIAS_NOTIF, value).apply()
+
     var heldCount: Int
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
@@ -110,5 +121,7 @@ class SovereignStore(context: Context) {
         private const val KEY_MODE = "workspace_mode"
         private const val KEY_GUARD = "guard"
         private const val KEY_TEMPLATES = "templates"
+        private const val KEY_CHECKLIST = "checklist_items"
+        private const val KEY_ALIAS_NOTIF = "alias_in_notifications"
     }
 }

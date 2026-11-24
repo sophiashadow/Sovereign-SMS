@@ -6,6 +6,7 @@ import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts
 import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.SovereignStore
+import com.sovereignops.sms.core.crm.Checklist
 import com.sovereignops.sms.core.guard.DraftGuard
 import com.sovereignops.sms.core.guard.GuardText
 import com.sovereignops.sms.core.pack.Starters
@@ -111,6 +112,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         binding.svKeywords.setText(RuleText.formatKeywords(c.keywordRules))
         binding.svGuard.setText(GuardText.format(store.guardRules))
         binding.svTemplates.setText(Templates.format(store.templates))
+        binding.svChecklist.setText(Checklist.format(store.checklistItems))
         loading = false
         render()
     }
@@ -122,6 +124,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         loading = true
         val c = store.ruleConfig
         svPreserve.isChecked = store.preserveScreened
+        svAliasNotif.isChecked = store.aliasInNotifications
         svRulesEnabled.isChecked = c.enabled
         svFocus.text = c.focusUntil?.takeIf { it.isAfter(LocalDateTime.now()) }
             ?.let { getString(R.string.sv_focus_until, it.format(DateTimeFormatter.ofPattern("EEE HH:mm"))) }
@@ -165,6 +168,7 @@ class SovereignSettingsActivity : SimpleActivity() {
     private fun wire() = binding.run {
         svPreserveHolder.setOnClickListener { svPreserve.toggle(); store.preserveScreened = svPreserve.isChecked }
         svRulesEnabledHolder.setOnClickListener { svRulesEnabled.toggle(); edit { it.copy(enabled = svRulesEnabled.isChecked) } }
+        svAliasNotifHolder.setOnClickListener { svAliasNotif.toggle(); store.aliasInNotifications = svAliasNotif.isChecked }
         svCodesHolder.setOnClickListener { svCodes.toggle(); edit { it.copy(alertOneTimeCodes = svCodes.isChecked) } }
 
         svFocusHolder.setOnClickListener {
@@ -240,6 +244,8 @@ class SovereignSettingsActivity : SimpleActivity() {
         if (guard != store.guardRules) store.guardRules = guard
         val templates = Templates.parse(binding.svTemplates.text.toString())
         if (templates != store.templates) store.templates = templates
+        val checklist = Checklist.parse(binding.svChecklist.text.toString())
+        if (checklist != store.checklistItems) store.checklistItems = checklist
     }
 
     /** Appends the neutral starter set to the text areas, disabled, for the user to review. */

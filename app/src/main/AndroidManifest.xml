@@ -31,7 +31,7 @@
 
     <application
         android:name=".App"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:dataExtractionRules="@xml/sovereign_data_extraction_rules"
         android:fullBackupContent="@xml/sovereign_backup_rules"
         android:appCategory="productivity"

@@ -155,7 +155,7 @@ abstract class BaseConversationsAdapter(
             conversationFrame.isSelected = selectedKeys.contains(conversation.hashCode())
 
             conversationAddress.apply {
-                text = conversation.title
+                text = com.sovereignops.sms.ui.SovereignInbox.title(conversation) // Sovereign SMS: alias + stage dot
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize * 1.2f)
             }
 

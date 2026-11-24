@@ -40,11 +40,21 @@ class WorkspaceTest {
     }
 
     @Test
-    fun `unsaved titles are raw numbers`() {
-        assertTrue(Workspace.titleLooksUnsaved("+1 (919) 555-0142"))
-        assertTrue(Workspace.titleLooksUnsaved("72345"))
-        assertFalse(Workspace.titleLooksUnsaved("Sam Example"))
-        assertFalse(Workspace.titleLooksUnsaved(""))
+    fun `row is known when the title is a contact name, not the number`() {
+        val n = "+19195550142"
+        assertFalse(Workspace.rowIsKnown("+1 (919) 555-0142", n, isGroup = false, usesCustomTitle = false, hasCard = false))
+        assertFalse(Workspace.rowIsKnown("72345", "72345", false, false, false))
+        assertFalse(Workspace.rowIsKnown("MERIDIAN", "MERIDIAN", false, false, false)) // alphanumeric sender ID
+        assertTrue(Workspace.rowIsKnown("Sam Example", n, false, false, false))
+        assertFalse(Workspace.rowIsKnown("", n, false, false, false))
+    }
+
+    @Test
+    fun `a client card makes a sender known and professional without touching Contacts`() {
+        val n = "+19195550142"
+        assertTrue(Workspace.rowIsKnown(n, n, isGroup = false, usesCustomTitle = false, hasCard = true))
+        assertEquals(Category.PROFESSIONAL, Workspace.resolve(null, isKnownContact = true, hasCard = true))
+        assertEquals(Category.PERSONAL, Workspace.resolve(Category.PERSONAL, isKnownContact = true, hasCard = true))
     }
 
     private fun d(alert: Alert, by: RuleId) = Decision(alert, by, emptyList(), emptySet(), listOf(""))

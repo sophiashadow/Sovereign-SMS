@@ -268,6 +268,8 @@ class ThreadActivity : SimpleActivity() {
 
         bus = EventBus.getDefault()
         bus!!.register(this)
+        binding.threadToolbar.setOnClickListener { sovereignOpenCard() } // Sovereign SMS
+        com.sovereignops.sms.vault.VaultCache.ensure(this) { if (participants.isNotEmpty()) setupThreadTitle() } // Sovereign SMS
 
         loadConversation()
         setupAttachmentPickerView()
@@ -395,6 +397,7 @@ class ThreadActivity : SimpleActivity() {
             R.id.archive -> archiveConversation()
             R.id.unarchive -> unarchiveConversation()
             R.id.rename_conversation -> renameConversation()
+            R.id.sovereign_card -> sovereignOpenCard() // Sovereign SMS
             R.id.sovereign_insert_template -> com.sovereignops.sms.ui.SovereignComposer.pickTemplate(this, binding.messageHolder.threadTypeMessage) // Sovereign SMS
             R.id.sovereign_category -> com.sovereignops.sms.ui.SovereignComposer.pickCategory(this, threadId) // Sovereign SMS
             R.id.sovereign_policy -> com.sovereignops.sms.ui.SovereignSettingsActivity.pickPolicy(this, threadId) // Sovereign SMS
@@ -1067,9 +1070,15 @@ class ThreadActivity : SimpleActivity() {
         }
     }
 
+    // Sovereign SMS: client card drawer (header tap or menu).
+    private fun sovereignOpenCard() {
+        com.sovereignops.sms.ui.SovereignThread.openCard(this, threadId, participants, messages) { setupThreadTitle() }
+    }
+
     private fun setupThreadTitle() {
         val title = conversation?.title
-        binding.threadToolbar.title = if (!title.isNullOrEmpty()) {
+        binding.threadToolbar.title = com.sovereignops.sms.ui.SovereignThread.title(threadId) // Sovereign SMS: local alias
+            ?: if (!title.isNullOrEmpty()) {
             title
         } else {
             participants.getThreadTitle()
@@ -1166,6 +1175,8 @@ class ThreadActivity : SimpleActivity() {
             numbersString
         )
 
+        // Sovereign SMS: offer app Quarantine before OS blocking, which drops messages.
+        com.sovereignops.sms.ui.SovereignBlockWarning.confirm(this, numbers) {
         ConfirmationDialog(this, question) {
             ensureBackgroundThread {
                 numbers.forEach {
@@ -1174,6 +1185,7 @@ class ThreadActivity : SimpleActivity() {
                 refreshConversations()
                 finish()
             }
+        }
         }
     }
 

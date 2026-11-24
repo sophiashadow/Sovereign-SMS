@@ -7,7 +7,8 @@ Date: 2026-11-24. Scope: `sovereign-sms-1-foss-debug.apk` built from this branch
 - **No `INTERNET` permission.** The app can't open network connections. MMS uses the carrier's MMS APN through the system, as upstream does.
 - No analytics, crash reporting or telemetry. None upstream either.
 - Messages stay in the Android Telephony provider. Sovereign stores only settings, rules and per-conversation flags, in the private SharedPreferences file `sovereign_sms`. It never stores message bodies.
-- **Cloud backup is off** for all app data (`dataExtractionRules`, `fullBackupContent`). Device-to-device transfer is still allowed.
+- **Backup is off.** `allowBackup="false"`; `dataExtractionRules` excludes everything from cloud backup and excludes the vault database (`sovereign_vault.db` and `-wal`/`-shm`/`-journal`), the wrapped vault key (`sovereign_vault_key.xml`) and sealed settings (`sovereign_sealed.xml`) from device-to-device transfer. Keystore keys never migrate, so copied ciphertext would be unreadable anyway.
+- **Vault.** SQLCipher with a raw 256-bit key (no KDF needed); the key is random, wrapped by a non-exportable Keystore AES-GCM key. Not bound to user authentication (messages must be filed while the phone is locked). On any open failure the files are renamed aside and kept.
 
 ## Permissions (inherited from upstream)
 

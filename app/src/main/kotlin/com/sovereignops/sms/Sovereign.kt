@@ -59,10 +59,17 @@ object Sovereign {
         }
     }
 
+    /** Notification sender: the local alias when set and allowed, else upstream's name. */
+    fun senderName(context: Context, threadId: Long, upstream: String): String = runCatching {
+        if (!store(context).aliasInNotifications) return upstream
+        com.sovereignops.sms.vault.VaultCache.cardFresh(context, threadId)?.alias ?: upstream
+    }.getOrDefault(upstream)
+
     fun decide(context: Context, threadId: Long, address: String, body: String): Pair<Decision, ChannelKind> {
         val store = store(context)
-        val known = !isUnknownSender(context, address)
-        val category = Workspace.resolve(store.category(threadId), known)
+        val hasCard = com.sovereignops.sms.vault.VaultCache.cardFresh(context, threadId) != null
+        val known = hasCard || !isUnknownSender(context, address)
+        val category = Workspace.resolve(store.category(threadId), known, hasCard)
         val message = IncomingMessage(
             address = address,
             isKnownContact = known,

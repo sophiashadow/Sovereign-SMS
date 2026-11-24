@@ -210,8 +210,11 @@ class SettingsActivity : SimpleActivity() {
             getString(org.fossify.commons.R.string.manage_blocked_numbers)
         settingsManageBlockedNumbersHolder.beVisible()
         settingsManageBlockedNumbersHolder.setOnClickListener {
+            // Sovereign SMS: warn that OS blocking drops messages before opening it.
+            com.sovereignops.sms.ui.SovereignBlockWarning.beforeManager(this@SettingsActivity) {
             Intent(this@SettingsActivity, ManageBlockedNumbersActivity::class.java).apply {
                 startActivity(this)
+            }
             }
         }
     }

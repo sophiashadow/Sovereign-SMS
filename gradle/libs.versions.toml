@@ -32,9 +32,14 @@ app-build-kotlinJVMTarget = "17"
 ez-vcard = "0.12.2"
 #Testing (Sovereign SMS)
 junit = "4.13.2"
+#Sovereign SMS vault
+sqlcipher = "4.20.0"
+androidx-sqlite = "2.7.0"
 [libraries]
 #Testing (Sovereign SMS)
 junit = { module = "junit:junit", version.ref = "junit" }
+sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
+androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
 #AndroidX
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidx-lifecycleprocess" }

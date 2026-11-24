@@ -156,5 +156,7 @@ dependencies {
     implementation(libs.bundles.room)
     ksp(libs.androidx.room.compiler)
     detektPlugins(libs.compose.detekt)
+    implementation(libs.sqlcipher.android) // Sovereign SMS vault (BSD-3-Clause)
+    implementation(libs.androidx.sqlite)
     testImplementation(libs.junit)
 }

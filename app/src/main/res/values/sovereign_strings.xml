@@ -38,8 +38,6 @@
     <string name="sv_preview_known">Sender is a contact</string>
     <string name="sv_preview_run">Run rules on this message</string>
     <string name="sv_section_portability">Rules file</string>
-    <string name="sv_export">Export rules (JSON)</string>
-    <string name="sv_import">Import rules (JSON)</string>
     <string name="sv_alert">Alert</string>
     <string name="sv_silent">Deliver silently</string>
     <string name="sv_held">Hold in a summary</string>
@@ -48,7 +46,6 @@
     <string name="sv_focus_3h">For 3 hours</string>
     <string name="sv_focus_morning">Until 08:00</string>
     <string name="sv_focus_until">On until %s</string>
-    <string name="sv_saved">Rules saved</string>
     <string name="sv_imported">Rules imported</string>
     <string name="sv_exported">Rules exported</string>
     <string name="sv_import_failed">Rules not imported: %s</string>
@@ -100,4 +97,30 @@
     <string name="sv_guard_invalid">Ignored, invalid pattern: %s</string>
     <string name="sv_export_pack">Export everything (JSON)</string>
     <string name="sv_import_pack">Import rules, guard and templates (JSON)</string>
+    <string name="sv_card">Client card</string>
+    <string name="sv_card_alias_hint">Local alias (never written to Contacts)</string>
+    <string name="sv_card_stage">Screening</string>
+    <string name="sv_card_checklist">Checklist</string>
+    <string name="sv_card_tier_hint">Rate tier tag (e.g. Tier A)</string>
+    <string name="sv_card_window_hint">Time window (used by {time_window})</string>
+    <string name="sv_card_optin">On my opt-in availability list</string>
+    <string name="sv_card_quarantine">Quarantine this sender (kept, silent, hidden from the main inbox)</string>
+    <string name="sv_card_notes_hint">Private notes (encrypted)</string>
+    <string name="sv_card_log_session">Log session</string>
+    <string name="sv_preserve_thread">Preserve thread</string>
+    <string name="sv_card_save">Save</string>
+    <string name="sv_card_saved">Card saved</string>
+    <string name="sv_card_derived">First contact %1$s · last %2$s · %3$d messages</string>
+    <string name="sv_vault_recovered">The encrypted vault could not be opened (device key changed or data restored), so a new one was started. The old file was kept aside, not deleted.</string>
+    <string name="sv_checklist_items">Checklist items (one per line)</string>
+    <string name="sv_section_cards">Client cards</string>
+    <string name="sv_checklist_note">Screening checklist shown on every card. Rename freely; prefix a line with #off to hide it without losing ticks.</string>
+    <string name="sv_alias_in_notifications">Show local alias in notifications</string>
+    <string name="sv_block_warning_title">Android blocking drops messages</string>
+    <string name="sv_block_warning">Android\'s system block list stops messages before this app receives them, so nothing is kept. Quarantine instead keeps every message, stored, marked read and muted, and you can undo it from the card.</string>
+    <string name="sv_block_quarantine">Quarantine instead</string>
+    <string name="sv_block_os_anyway">Block in Android</string>
+    <string name="sv_block_manager_warning">Numbers on Android\'s block list are dropped by the system and never stored. To keep and silence a sender instead, use Quarantine on the conversation\'s card.</string>
+    <string name="sv_continue">Continue</string>
+    <string name="sv_quarantined">Quarantined: kept and muted</string>
 </resources>
