@@ -21,17 +21,36 @@ Do not switch the default SMS app until this step is done.
 
 ## 2. Install over ADB
 
-From the repository root, on a computer with platform-tools:
+From the repository root, on a computer with platform-tools. There are two builds:
+
+| Build | Package | Use |
+|---|---|---|
+| Release (R8-minified, not debuggable) | `com.sovereignops.sms` | Daily use, once it is signed with **your own** key |
+| Debug | `com.sovereignops.sms.debug` | Looking around side by side; debuggable |
 
 ```sh
 adb devices                       # phone listed as "device", not "unauthorized" (accept the prompt on the phone)
-adb install -r app/build/outputs/apk/foss/debug/sovereign-sms-1-foss-debug.apk
-adb shell pm list packages | grep com.sovereignops.sms.debug
+adb install -r app/build/outputs/apk/foss/release/sovereign-sms-1-foss-release.apk
+adb shell pm list packages | grep com.sovereignops.sms
 ```
 
-The `-r` flag keeps data when you update an existing install. The debug build is `com.sovereignops.sms.debug`, and it installs next to your current messenger.
+The `-r` flag keeps data when you update an existing install. Both builds install next to your current messenger.
 
-To remove it, run `adb uninstall com.sovereignops.sms.debug`. This deletes Sovereign settings and rules, so export a pack first.
+**Signing.** Android installs an update only when it is signed with the same key as the installed app. The release APK built in the agent session was signed with a throwaway test key that has already been discarded. Treat that APK as evidence that the release build works, not as the install you keep. Build the one you keep with your own keystore:
+
+```sh
+SIGNING_KEY_ALIAS=… SIGNING_KEY_PASSWORD=… SIGNING_STORE_FILE=/path/outside/the/repo.jks SIGNING_STORE_PASSWORD=… \
+  ./gradlew assembleFossRelease
+/path/to/build-tools/apksigner verify --print-certs app/build/outputs/apk/foss/release/sovereign-sms-1-foss-release.apk
+```
+
+Keep that keystore and its passwords outside the repository and back them up. If you lose them, you can never update the app; you can only uninstall it (which deletes Sovereign data) and reinstall. `INSTALL_FAILED_UPDATE_INCOMPATIBLE` means the keys differ.
+
+**Developer verification** (Android's new installer check) doesn't apply to ADB installs ("Apps installed using ADB won't require verification", developer.android.com/developer-verification). See `ANDROID17_ONEUI_AUDIT.md`.
+
+**Advanced Protection** (Settings → Security and privacy → Advanced Protection, where offered) lists "Blocked app sideloading". The docs don't say whether this also blocks `adb install`. If the install is refused, turn the mode off for the install and back on afterwards (*device test*).
+
+To remove the app, run `adb uninstall com.sovereignops.sms` (or `.debug`). This deletes Sovereign settings, rules and the vault. Make a `.sovbak` backup first (Settings → Sovereign SMS → Encrypted backup (.sovbak)).
 
 ## 3. Restricted settings
 
@@ -46,7 +65,7 @@ Samsung can put apps to sleep, which delays or drops SMS notifications.
 
 ## 5. Notification channels
 
-Sovereign SMS uses separate channels: Personal, Professional, Unknown senders, Priority, One-time codes, Quiet, Held. Sound, vibration and lock-screen display are set per channel in App info → Notifications. Professional and Unknown start with **content hidden on the lock screen**.
+Sovereign SMS uses separate channels: Personal, Priority / Regular, Professional, Unknown senders, One-time codes, Quarantine, Quiet, Held. Sound, vibration and lock-screen display are set per channel in App info → Notifications. Professional and Unknown start with **content hidden on the lock screen**.
 
 ## 6. Switch, then test
 
@@ -57,3 +76,12 @@ Only after §0 is done: Settings → Apps → **Default apps** → SMS app → S
 3. Switch the top bar to Focus, and confirm the inbox shows only priority conversations.
 
 Write down which step you actually did on the phone. Until then, each one is untested.
+
+## 7. Thirty-second rollback
+
+If anything goes wrong (messages missing, no notifications, sending fails):
+
+1. Settings → Apps → **Default apps** → SMS app → choose your previous messenger. This takes effect at once. Messages live in Android's own message store, so the previous app sees everything, including messages that arrived while Sovereign SMS was the default.
+2. Turn RCS chats back on in that app if you turned them off in §0.
+
+Nothing else is needed. Sovereign SMS can stay installed and do nothing, or be uninstalled later (§2). Conversations it archived stay archived in the system store; unarchive them in Sovereign first if your other app hides archived threads.

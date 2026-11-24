@@ -45,6 +45,10 @@
         android:title="@string/sv_card"
         app:showAsAction="never" />
     <item
+        android:id="@+id/sovereign_preserve"
+        android:title="@string/sv_preserve"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/sovereign_insert_template"
         android:showAsAction="never"
         android:title="@string/sv_insert_template"

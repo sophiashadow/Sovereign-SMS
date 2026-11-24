@@ -7,6 +7,8 @@ import android.util.Base64
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.io.File
 import java.security.KeyStore
@@ -18,7 +20,7 @@ import javax.crypto.spec.GCMParameterSpec
 
 @Database(
     entities = [CardRow::class, QuarantineRow::class, DismissalRow::class, TraceRow::class, LedgerRow::class, CounterRow::class, ResponseTimeRow::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class VaultDatabase : RoomDatabase() {
@@ -82,11 +84,19 @@ object Vault {
         return build(context, loadOrCreateDek(context))
     }
 
+    /** Schema 2: nullable `cards.addresses` for unlinked restored cards. Additive; no data changes. */
+    internal val MIGRATION_1_2 = object : Migration(1, 2) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `cards` ADD COLUMN `addresses` TEXT")
+        }
+    }
+
     private fun build(context: Context, dek: ByteArray): VaultDatabase {
         // A raw 256-bit key ("x'…'") skips SQLCipher's passphrase KDF: the key is already random.
         val raw = "x'" + dek.joinToString("") { "%02x".format(it) } + "'"
         return Room.databaseBuilder(context, VaultDatabase::class.java, DB_NAME)
             .openHelperFactory(SupportOpenHelperFactory(raw.toByteArray(Charsets.US_ASCII)))
+            .addMigrations(MIGRATION_1_2)
             .build()
     }
 

@@ -27,7 +27,7 @@ object SovereignLock : Application.ActivityLifecycleCallbacks {
         apply(app)
         app.registerActivityLifecycleCallbacks(this)
         // ACTION_SCREEN_OFF is only delivered to receivers registered at runtime.
-        app.registerReceiver(object : BroadcastReceiver() {
+        androidx.core.content.ContextCompat.registerReceiver(app, object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action != Intent.ACTION_SCREEN_OFF) return
                 val store = Sovereign.store(context)
@@ -35,7 +35,7 @@ object SovereignLock : Application.ActivityLifecycleCallbacks {
                     context.appLockManager.lock()
                 }
             }
-        }, IntentFilter(Intent.ACTION_SCREEN_OFF))
+        }, IntentFilter(Intent.ACTION_SCREEN_OFF), androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     /** Push the stored timeout into upstream's lock; call after changing it. */

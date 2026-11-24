@@ -5,13 +5,13 @@
 - Nothing has been installed, device-tested or carrier-tested yet. Only JVM tests and a compile have run.
 - There's one quiet-hours window in the UI. Extra windows can be imported through JSON and are kept.
 - The held summary counts messages but doesn't list them. It clears when the inbox opens.
-- Slices A–E are committed on this branch; Slice F (preservation export, `.sovbak`, hardening, release build) is in progress.
+- Slices A–F are committed on this branch. No pull request is open.
 - The draft guard warns and asks for a second tap; it never blocks. Pair rules with a window use the thread history in the conversation view and the badge, but not at receipt time (receipt sees only the new message).
 - Known/unknown: a sender with a card (alias or stage) is known. Otherwise the inbox compares the title with the number; the receiver uses a Contacts lookup.
-- Room schemas are generated to `app/schemas/` but not committed (upstream ignores that folder); vault schema is version 1.
+- Room schemas are generated to `app/schemas/` but not committed (upstream ignores that folder); vault schema is version 2.
 - Templates and guard rules are stored with Android Keystore AES-GCM. If a key is lost, the old ciphertext is kept under `unreadable_*` rather than being overwritten.
 - No RCS. Upstream Fossify strings and translations remain; Sovereign strings are English only.
-- The debug APK is about 38 MB (uncompressed multi-dex). A minified release will be much smaller.
+- The debug APK is about 46 MB; the R8 release APK is about 15 MB.
 
 ## Next (P2, waiting for the owner's go-ahead)
 
@@ -34,3 +34,13 @@
 - The decision log is global (thread id shown), not yet per-conversation from the thread menu.
 - Ledger figures are whatever the owner types; nothing is read from messages. Hours are capped at 24 per field.
 - Schedules are edited as text; a visual builder can come later if text proves awkward on the phone.
+
+## Slice F follow-ups (2026-11-24)
+
+- **MmsReceiver is exported without a permission** (upstream). Set `exported="false"` and confirm MMS receipt on a device (`SECURITY_REVIEW.md`).
+- Release signing with the owner's own keystore, kept outside the repo; pin its certificate digest. The agent-built release used a throwaway key.
+- Device questions from `ANDROID17_ONEUI_AUDIT.md`: is the default SMS app exempt from Android 17's 3-hour one-time-code hold? Does Advanced Protection block `adb install`? How does One UI show the lock-screen notification?
+- The thread ZIP is not encrypted by design (preservation copy). To keep it private, store it inside an encrypted location or wrap it in a `.sovbak`-style container later.
+- `.sovbak` restore re-links cards to conversations by phone number. Cards with no matching conversation are kept unlinked (not shown in any thread, not in the queue) and carried into the next backup, so a later restore can re-link them. There is no screen yet to view or re-attach unlinked cards by hand.
+- Vault schema is now 2 (adds nullable `cards.addresses`). The 1→2 migration has not run on a device.
+- Instrumented (on-device) tests: none exist yet.

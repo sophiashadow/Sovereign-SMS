@@ -398,6 +398,7 @@ class ThreadActivity : SimpleActivity() {
             R.id.unarchive -> unarchiveConversation()
             R.id.rename_conversation -> renameConversation()
             R.id.sovereign_card -> sovereignOpenCard() // Sovereign SMS
+            R.id.sovereign_preserve -> com.sovereignops.sms.ui.SovereignPortabilityActivity.start(this, com.sovereignops.sms.ui.SovereignPortabilityActivity.ACTION_PRESERVE, threadId) // Sovereign SMS
             R.id.sovereign_insert_template -> com.sovereignops.sms.ui.SovereignComposer.pickTemplate(this, binding.messageHolder.threadTypeMessage, threadId = threadId) // Sovereign SMS
             R.id.sovereign_category -> com.sovereignops.sms.ui.SovereignComposer.pickCategory(this, threadId) // Sovereign SMS
             R.id.sovereign_policy -> com.sovereignops.sms.ui.SovereignSettingsActivity.pickPolicy(this, threadId) // Sovereign SMS

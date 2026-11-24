@@ -127,6 +127,13 @@
             android:name="com.sovereignops.sms.FocusEndingReceiver"
             android:exported="false" />
 
+        <!-- Sovereign SMS preserve / backup / restore; not exported. Files only via the system picker. -->
+        <activity
+            android:name="com.sovereignops.sms.ui.SovereignPortabilityActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/sv_backup" />
+
         <!-- Sovereign SMS rules screen; not exported. -->
         <activity
             android:name="com.sovereignops.sms.ui.SovereignSettingsActivity"

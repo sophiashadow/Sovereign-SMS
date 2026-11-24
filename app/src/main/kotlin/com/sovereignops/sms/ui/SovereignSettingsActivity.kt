@@ -58,6 +58,7 @@ class SovereignSettingsActivity : SimpleActivity() {
     private var extraWindows: List<TimeWindow> = emptyList()
     private var loading = false
     private var previewStage: Stage? = null
+    private var reloadOnResume = false
 
     private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -97,6 +98,11 @@ class SovereignSettingsActivity : SimpleActivity() {
     override fun onResume() {
         super.onResume()
         setupTopAppBar(binding.svAppbar, NavigationIcon.Arrow)
+        // After a restore the stored settings may have changed; reload so stale text is not saved back over them.
+        if (reloadOnResume) {
+            reloadOnResume = false
+            load()
+        }
         updateTextColors(binding.svScrollview)
     }
 
@@ -300,6 +306,24 @@ class SovereignSettingsActivity : SimpleActivity() {
         svPreviewRunHolder.setOnClickListener { preview() }
         svExportHolder.setOnClickListener { exportLauncher.launch("sovereign-sms-pack.json") }
         svImportHolder.setOnClickListener { importLauncher.launch(arrayOf("application/json", "text/plain")) }
+        svBackupHolder.setOnClickListener {
+            saveText()
+            SovereignPortabilityActivity.start(this@SovereignSettingsActivity, SovereignPortabilityActivity.ACTION_BACKUP)
+        }
+        svNoticesHolder.setOnClickListener {
+            val text = runCatching {
+                listOf("NOTICES.txt", "sqlcipher-android-BSD-3-Clause.txt", "libtomcrypt-Unlicense.txt", "Apache-2.0.txt").joinToString("\n\n————\n\n") { f ->
+                    assets.open("licenses/$f").use { it.readBytes().toString(Charsets.UTF_8) }
+                }
+            }.getOrDefault("")
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this@SovereignSettingsActivity)
+                .setTitle(R.string.sv_notices).setMessage(text).setPositiveButton(android.R.string.ok, null).show()
+        }
+        svRestoreHolder.setOnClickListener {
+            saveText()
+            reloadOnResume = true
+            SovereignPortabilityActivity.start(this@SovereignSettingsActivity, SovereignPortabilityActivity.ACTION_RESTORE)
+        }
     }
 
     /** Text areas are saved when leaving the screen and before any action that reads the config. */

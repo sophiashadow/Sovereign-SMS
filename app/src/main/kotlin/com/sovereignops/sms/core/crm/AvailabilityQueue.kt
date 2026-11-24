@@ -14,7 +14,7 @@ object AvailabilityQueue {
      * and sorted to the end, so the person can still choose to send.
      */
     fun build(cards: List<Card>, now: Long, cooldown: Cooldown = Cooldown(), lastActivity: (Card) -> Long? = { null }): List<QueueEntry> =
-        cards.filter { it.optInAvailability }
+        cards.filter { it.optInAvailability && it.threadId > 0 } // unlinked (restored, no conversation) cards have no one to send to
             .map { c ->
                 val last = listOfNotNull(c.lastContacted, c.lastAvailabilityPing, lastActivity(c)).maxOrNull()
                 QueueEntry(c, last, cooldown.warning(c.availabilityPings, now))

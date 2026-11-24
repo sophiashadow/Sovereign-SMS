@@ -1,0 +1,17 @@
+Open-source notices for components added to this build
+=======================================================
+
+This app is a modified version of Fossify Messages (GPL-3.0-or-later); its own
+licence and notices are shown under About in the app and in its source.
+
+SQLCipher for Android (net.zetetic:sqlcipher-android 4.20.0)
+  Licence: BSD-3-Clause. Copyright (c) 2008-2023, ZETETIC LLC.
+  Full text: licenses/sqlcipher-android-BSD-3-Clause.txt (below).
+  Bundles SQLite 3.54.1 (public domain) and LibTomCrypt (The LibTom license,
+  public-domain dedication; text below).
+
+AndroidX Room, Biometric and other AndroidX libraries
+  Licence: Apache-2.0 (full text: licenses/Apache-2.0.txt).
+
+kotlinx.serialization
+  Licence: Apache-2.0 (full text: licenses/Apache-2.0.txt).

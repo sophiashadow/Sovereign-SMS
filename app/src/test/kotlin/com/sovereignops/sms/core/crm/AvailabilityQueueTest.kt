@@ -48,4 +48,10 @@ class AvailabilityQueueTest {
         assertEquals(listOf(now - 9 * day, now), after.availabilityPings)
         assertEquals(now, after.lastContacted)
     }
+
+    @Test
+    fun `unlinked cards from a restore never enter the queue`() {
+        val q = AvailabilityQueue.build(listOf(Card(-1, alias = "U", optInAvailability = true), Card(7, alias = "L", optInAvailability = true)), now)
+        assertEquals(listOf("L"), q.map { it.card.alias })
+    }
 }

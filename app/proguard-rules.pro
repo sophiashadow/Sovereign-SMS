@@ -44,3 +44,24 @@
 -keepclassmembers,allowobfuscation class ezvcard.parameter.* extends ezvcard.parameter.MediaTypeParameter {
     <init>(java.lang.String, java.lang.String, java.lang.String);
 }
+
+# Sovereign SMS: SQLCipher is reached from JNI and by Room's open helper; keep it whole
+# (the AAR's consumer rules already keep net.zetetic.database.**; this is belt and braces).
+-keep class net.zetetic.** { *; }
+-dontwarn net.zetetic.**
+
+# Sovereign SMS: MMS sending/receiving goes through the bundled klinker-derived classes and
+# platform reflection; keep upstream's MMS packages and the Telephony receivers intact.
+-keep class com.android.mms.** { *; }
+-keep class com.klinker.android.send_message.** { *; }
+-keep class com.google.android.mms.** { *; }
+-dontwarn com.android.mms.**
+-dontwarn com.google.android.mms.**
+
+# Sovereign SMS: strip debug/verbose/info logging (ours and libraries') from release builds so
+# message metadata cannot reach logcat that way. Warnings and errors are kept for crash triage.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}

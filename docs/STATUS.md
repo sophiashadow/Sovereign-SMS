@@ -3,7 +3,7 @@
 Updated 2026-11-24. Each label is claimed only with its own evidence:
 
 - **implemented**: code is in the repo.
-- **compiled**: `assembleFossDebug` succeeded.
+- **compiled**: `assembleFossDebug` succeeded (and, from Slice F, `assembleFossRelease`).
 - **tested**: JVM unit tests pass.
 - **device**: verified on a phone. **Nothing has reached this state yet.**
 
@@ -59,6 +59,11 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | C | FLAG_SECURE toggle (blocks screenshots and the Recents preview) on every activity | compiled |
 | C | Quick Cover: toolbar button, settings switch and Quick Settings tile. On: inbox forced to Personal, Professional/Unknown alerts held, Quarantine hidden; held notifications cleared. Off, or switching to another mode chip: biometrics or device screen lock (BiometricPrompt, BIOMETRIC_WEAK or DEVICE_CREDENTIAL) | engine part tested (QuarantineCoverTest); UI and tile compiled. Without any device lock set, leaving cover needs no authentication |
 | G | Workload insights | not started |
-| — | Signed release build | not done (no signing key; needs owner authorisation) |
+| F | Preserve thread (thread menu → Preserve thread): ZIP with `thread.md` (chronological, quoted, markup neutralised), exact `messages.json`, attachments (each capped at 64 MB; unreadable ones listed as missing), `manifest.sha256` last in `sha256sum` format; read back and verified after writing | tested (ThreadArchiveTest 4); screen compiled |
+| F | `.sovbak` encrypted backup / restore (Settings): PBKDF2-HMAC-SHA256 600k + AES-256-GCM, header as AAD; card, checklist, quarantine, ledger and rules pack; MERGE (keeps this phone's data) or OVERWRITE (asks to confirm); decrypt before any change, one transaction; re-opened after writing. Restored cards re-link to this phone's conversations by number; a card with no matching conversation (or whose conversation already has a card) is kept *unlinked* (negative id, numbers stored, vault schema 2) and never attached to an unrelated thread or offered in the availability queue | tested (SovBakTest 4 + BackupContentTest 4, real 600k round trip; AvailabilityQueueTest); schema 1→2 migration (additive column) checked against Room's generated schemas on stock SQLite, not on a device; screen compiled |
+| F | Shipped notices: Settings → Open-source notices (SQLCipher BSD-3-Clause, LibTomCrypt Unlicense, Apache-2.0) from `assets/licenses/` | compiled |
+| F | R8 keep rules (SQLCipher, MMS), `Log.v/d/i` stripped in release, screen-off receiver `RECEIVER_NOT_EXPORTED` | release compiled; no device run |
+| F | Signed release APK `com.sovereignops.sms` | built and `apksigner`-verified with a **throwaway test key** (not kept); 16 KB `zipalign -P 16` and ELF 0x4000 verified. Owner-key signing not done |
+| F | Android 17 / One UI audit (`ANDROID17_ONEUI_AUDIT.md`) and release security review (`SECURITY_REVIEW.md`) | written; 3 open device questions |
 
-Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice E) had 116 tests with 0 failures and 0 errors.
+Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice F) had 129 tests with 0 failures and 0 errors.

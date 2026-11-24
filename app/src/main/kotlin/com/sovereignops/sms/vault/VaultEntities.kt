@@ -27,6 +27,12 @@ data class CardRow(
     val timeWindow: String?,
     val pings: String,
     val lastContacted: Long?,
+    /**
+     * Only for an *unlinked* card (negative id) restored from a backup whose conversation is not on
+     * this phone: its numbers as backed up, comma-separated, so the next backup can re-link it.
+     * Linked cards leave it null and use the live conversation's numbers. Added in vault schema 2.
+     */
+    val addresses: String? = null,
 ) {
     fun toCard() = Card(
         threadId = threadId,

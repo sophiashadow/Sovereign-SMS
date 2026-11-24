@@ -4,10 +4,10 @@ Until a step here has actually been carried out on your phone, treat it as untes
 
 ## 1. Side-by-side install (safe and reversible)
 
-The debug build is `com.sovereignops.sms.debug`. It installs next to your current messenger and becomes **nothing** by default.
+The release build is `com.sovereignops.sms` and the debug build is `com.sovereignops.sms.debug`. Either installs next to your current messenger and is **not** the default SMS app until you make it one. For the release build, sign it with your own key (see `DEPLOY_SAMSUNG_ONEUI.md` §2).
 
 ```sh
-adb install -r app/build/outputs/apk/foss/debug/sovereign-sms-1-foss-debug.apk
+adb install -r app/build/outputs/apk/foss/release/sovereign-sms-1-foss-release.apk   # or foss/debug/…-debug.apk
 ```
 
 Or copy the APK to the phone and open it (you'll need to allow installs from your file manager).
@@ -32,5 +32,5 @@ Then test by receiving one message from a person or number you control.
 ## 4. Roll back
 
 1. Settings → Apps → Default apps → SMS app → choose your previous messenger. Messages live in the system provider, so they stay where they are and your old app sees them.
-2. Optional: export your Sovereign rules (Settings → Sovereign SMS → Export pack), then uninstall with `adb uninstall com.sovereignops.sms.debug`. Uninstalling removes only Sovereign settings, rules and per-conversation flags. Conversations Sovereign archived stay archived in the provider. Unarchive them first if you want them back in the inbox of an app that hides archived threads.
+2. Optional: make an encrypted backup (Settings → Sovereign SMS → Encrypted backup (.sovbak)), then uninstall with `adb uninstall com.sovereignops.sms` (or `.debug`). Uninstalling removes only Sovereign data: settings, rules, cards, quarantine list, ledger and per-conversation flags. Conversations Sovereign archived stay archived in the provider. Unarchive them first if you want them back in the inbox of an app that hides archived threads.
 3. Turn RCS back on in your previous app if you switched it off.

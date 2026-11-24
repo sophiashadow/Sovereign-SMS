@@ -209,4 +209,26 @@
     <string name="sv_ledger_totals">Days: %1$d · Show rate %2$s (%3$d of %4$d)\nNet %5$s (gross %6$s, room %7$s)\nBCR %8$s · Session share %9$s of %10$s h</string>
     <string name="sv_ledger_row">%1$s %2$s · net %3$s · show %4$s · BCR %5$s</string>
     <string name="sv_ledger_weekday">%1$s: days %2$d · show %3$s · BCR %4$s</string>
+    <string name="sv_working">Working…</string>
+    <string name="sv_preserve">Preserve thread (ZIP)</string>
+    <string name="sv_preserve_title">Conversation %d</string>
+    <string name="sv_preserve_done">Preserved %1$d messages and checked the manifest. Attachments not readable: %2$d</string>
+    <string name="sv_backup">Encrypted backup (.sovbak)</string>
+    <string name="sv_backup_summary">Settings, cards, quarantine list and ledger, sealed with a password you choose</string>
+    <string name="sv_backup_note">There is no recovery without this password. The file is encrypted with AES-256-GCM using a key derived from the password (PBKDF2, 600,000 rounds).</string>
+    <string name="sv_backup_password">Backup password</string>
+    <string name="sv_backup_password_again">Repeat password</string>
+    <string name="sv_backup_short">Use at least %d characters</string>
+    <string name="sv_backup_mismatch">The passwords differ</string>
+    <string name="sv_backup_done">Backup written and re-opened successfully</string>
+    <string name="sv_restore">Restore backup</string>
+    <string name="sv_restore_summary">Merge into this phone, or overwrite it</string>
+    <string name="sv_restore_note">Nothing changes until the file decrypts.</string>
+    <string name="sv_restore_found">The backup holds %1$d cards, %2$d quarantined senders and %3$d ledger days.\n\nMerge keeps everything on this phone and adds what is missing (settings unchanged). Overwrite replaces cards, quarantine, ledger and settings with the backup.</string>
+    <string name="sv_restore_merge">Merge</string>
+    <string name="sv_restore_overwrite">Overwrite</string>
+    <string name="sv_restore_overwrite_confirm">Replace this phone\'s Sovereign cards, quarantine list, ledger and settings with the backup? Messages are not touched.</string>
+    <string name="sv_restore_done">Restored. Cards now: %d</string>
+    <string name="sv_notices">Open-source notices</string>
+    <string name="sv_notices_summary">SQLCipher (BSD-3-Clause), LibTomCrypt, Apache-2.0</string>
 </resources>
