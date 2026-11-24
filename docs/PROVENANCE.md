@@ -26,10 +26,10 @@ Versions are pinned in `gradle/libs.versions.toml`.
 | Component | Version | Licence | Verified from | Scope |
 |---|---|---|---|---|
 | org.fossify:commons | 7.1.3 | GPL-3.0 | LICENSE in the FossifyOrg/Commons clone | runtime |
-| org.fossify:mmslib | 1.0.1 | Apache-2.0 (file headers); SMIL DOM interfaces under the W3C Software Licence | source headers in the FossifyOrg/mmslib clone (no top-level LICENSE file) | runtime |
-| org.fossify:IndicatorFastScroll | 4524cd0b61 | Apache-2.0 (upstream reddit/IndicatorFastScroll) | not re-read here, so **verify** | runtime |
+| org.fossify:mmslib | 1.0.1 | Apache-2.0 (file headers); SMIL DOM interfaces (2000, modified upstream) under the W3C Software Notice and License, 1998 formulation (SPDX `W3C-19980720`, text from spdx/license-list-data v3.27.0; w3.org is unreachable from the build container) | source headers in the FossifyOrg/mmslib clone (no top-level LICENSE file) | runtime |
+| org.fossify:IndicatorFastScroll | 4524cd0b61 | **MIT** (Copyright (c) 2018 Reddit, Inc.); earlier recorded here as Apache-2.0 in error, corrected 2026-11-24 | `LICENSE` at commit 4524cd0b61 of FossifyOrg/IndicatorFastScroll (same text as reddit/IndicatorFastScroll) | runtime |
 | org.greenrobot:eventbus | 3.3.1 | Apache-2.0 | POM | runtime |
-| com.googlecode.ez-vcard:ez-vcard | 0.12.2 | BSD-2-Clause ("FreeBSD License") | POM | runtime |
+| com.googlecode.ez-vcard:ez-vcard | 0.12.2 | BSD-2-Clause ("FreeBSD License") | POM; `LICENSE` at tag 0.12.2 of mangstadt/ez-vcard | runtime (declared directly, as upstream) |
 | AndroidX (Room 2.8.5, ConstraintLayout, SwipeRefreshLayout, Lifecycle, DocumentFile) | see toml | Apache-2.0 | AndroidX standard licence | runtime |
 | kotlinx-serialization-json | 1.11.0 | Apache-2.0 | JetBrains | runtime |
 | net.zetetic:sqlcipher-android | 4.20.0 | BSD-3-Clause (Zetetic LLC); bundles SQLite 3.54.1 (public domain) and LibTomCrypt (The LibTom license, public-domain dedication) | `LICENSE` at tag v4.20.0 of sqlcipher/sqlcipher-android; LibTomCrypt `LICENSE` (libtom/libtomcrypt). Crypto provider read from the AAR's `libsqlcipher.so` (libtomcrypt source paths, no OpenSSL symbols), corrected 2026-11-24 | runtime (encrypted vault) |
@@ -37,7 +37,7 @@ Versions are pinned in `gradle/libs.versions.toml`.
 | androidx.biometric:biometric | 1.4.0-alpha02 | Apache-2.0 | AndroidX standard licence; same version Fossify Commons already resolved transitively, declared directly for Quick Cover re-authentication | runtime |
 | junit:junit | 4.13.2 | EPL-1.0 | — | **test only** (not shipped) |
 
-All runtime licences are compatible with GPL-3.0 distribution. BSD-3-Clause requires the SQLCipher copyright notice and licence to ship with binaries: they ship in the APK under `assets/licenses/` (SQLCipher BSD-3-Clause, LibTomCrypt, Apache-2.0, and an index `NOTICES.txt`) and are shown in Settings > Sovereign SMS > Open-source notices. Neither the test dependency nor the build tooling is distributed.
+All runtime licences are compatible with GPL-3.0 distribution. BSD-3-Clause requires the SQLCipher copyright notice and licence to ship with binaries: they ship in the APK under `assets/licenses/` with every other notice a binary copy requires: SQLCipher BSD-3-Clause, LibTomCrypt, IndicatorFastScroll MIT, ez-vcard BSD-2-Clause, the W3C notice for mmslib's SMIL interfaces, Apache-2.0, and an index `NOTICES.txt` (`NoticesTest` keeps the screen's list in step with the folder) and are shown in Settings > Sovereign SMS > Open-source notices. Neither the test dependency nor the build tooling is distributed.
 
 ## Assets
 

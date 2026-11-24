@@ -4,7 +4,7 @@ Until a step here has actually been carried out on your phone, treat it as untes
 
 ## 1. Side-by-side install (safe and reversible)
 
-The release build is `com.sovereignops.sms` and the debug build is `com.sovereignops.sms.debug`. Either installs next to your current messenger and is **not** the default SMS app until you make it one. For the release build, sign it with your own key (see `DEPLOY_SAMSUNG_ONEUI.md` §2).
+The release build is `com.sovereignops.sms` and the debug build is `com.sovereignops.sms.debug`. Either installs next to your current messenger and is **not** the default SMS app until you make it one. For the release build, sign it with your own key and verify it (see `BUILD_AND_SIGNING.md` §3).
 
 ```sh
 adb install -r app/build/outputs/apk/foss/release/sovereign-sms-1-foss-release.apk   # or foss/debug/…-debug.apk

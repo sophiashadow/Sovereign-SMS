@@ -413,7 +413,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         }
         svNoticesHolder.setOnClickListener {
             val text = runCatching {
-                listOf("NOTICES.txt", "sqlcipher-android-BSD-3-Clause.txt", "libtomcrypt-Unlicense.txt", "Apache-2.0.txt").joinToString("\n\n————\n\n") { f ->
+                com.sovereignops.sms.core.Notices.FILES.joinToString("\n\n————\n\n") { f ->
                     assets.open("licenses/$f").use { it.readBytes().toString(Charsets.UTF_8) }
                 }
             }.getOrDefault("")

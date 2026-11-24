@@ -1,0 +1,4 @@
+# SHA-256 fingerprint of the production signing certificate, 64 hex digits, colons optional.
+# The owner fills this in after generating the key (docs/BUILD_AND_SIGNING.md §3.3).
+# It is public information, not a secret. scripts/verify-apk.sh reads the first line not starting with #.
+# Empty means no production key exists yet: the pin check reports NOT_RUN.

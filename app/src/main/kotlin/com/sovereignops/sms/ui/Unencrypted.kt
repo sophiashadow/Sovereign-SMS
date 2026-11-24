@@ -6,7 +6,7 @@ import org.fossify.messages.R
 
 /**
  * Shown before every export that leaves the app unencrypted (thread ZIP, settings pack, ledger
- * CSV/Markdown). It warns; it never blocks: Continue always proceeds to the system file dialog.
+ * CSV/Markdown, upstream message export). It warns; it never blocks: Continue always proceeds to the system file dialog.
  */
 object Unencrypted {
     fun confirm(activity: Activity, message: Int, onCancel: () -> Unit = {}, onContinue: () -> Unit) {

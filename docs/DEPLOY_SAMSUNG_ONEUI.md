@@ -36,15 +36,7 @@ adb shell pm list packages | grep com.sovereignops.sms
 
 The `-r` flag keeps data when you update an existing install. Both builds install next to your current messenger.
 
-**Signing.** Android installs an update only when it is signed with the same key as the installed app. The release APK built in the agent session was signed with a throwaway test key that has already been discarded. Treat that APK as evidence that the release build works, not as the install you keep. Build the one you keep with your own keystore:
-
-```sh
-SIGNING_KEY_ALIAS=… SIGNING_KEY_PASSWORD=… SIGNING_STORE_FILE=/path/outside/the/repo.jks SIGNING_STORE_PASSWORD=… \
-  ./gradlew assembleFossRelease
-/path/to/build-tools/apksigner verify --print-certs app/build/outputs/apk/foss/release/sovereign-sms-1-foss-release.apk
-```
-
-Keep that keystore and its passwords outside the repository and back them up. If you lose them, you can never update the app; you can only uninstall it (which deletes Sovereign data) and reinstall. `INSTALL_FAILED_UPDATE_INCOMPATIBLE` means the keys differ.
+**Signing.** Android installs an update only when it is signed with the same key as the installed app. The release APK built in the agent session was signed with a throwaway test key that has already been discarded. Treat that APK as evidence that the release build works, not as the install you keep. Make your permanent key, back it up, build and verify the release as described in [BUILD_AND_SIGNING.md](BUILD_AND_SIGNING.md) §3. Before installing, run `scripts/verify-apk.sh` on the APK (and `--previous` against the installed copy when updating). `INSTALL_FAILED_UPDATE_INCOMPATIBLE` means the keys differ: make a `.sovbak` before doing anything else.
 
 **Developer verification** (Android's new installer check) doesn't apply to ADB installs ("Apps installed using ADB won't require verification", developer.android.com/developer-verification). See `ANDROID17_ONEUI_AUDIT.md`.
 

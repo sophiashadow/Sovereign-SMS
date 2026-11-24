@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [Sovereign 0.1.0-alpha.1] - unreleased (proposed tag `v0.1.0-alpha.1`)
+First Sovereign SMS alpha, forked from Fossify Messages 1.10.3. Not yet tested on a device; see `docs/KNOWN_LIMITATIONS.md`.
+
+### Added
+- Own app identity `com.sovereignops.sms`; no INTERNET permission; Android cloud backup off.
+- Encrypted vault (Room + SQLCipher, key wrapped by Android Keystore) for cards, quarantine, ledger, decision log and counters.
+- Contact cards: alias, stage, checklist, tier, time window, notes, opt-in availability list.
+- Quarantine list and workspace; workspace modes and per-category notification channels.
+- Local notification rules: quiet hours, timed focus, schedules, priority, mute, unknown senders, keywords and tags, cooldown, one-time codes with Copy code; precedence engine and "Why did this happen?" log.
+- Draft guard and incoming flags sharing one pattern engine; confirm-send gate; neutral presets shipped off.
+- Templates with categories, favourites and placeholders; quick-reply bar; availability queue (sends only on tap).
+- App lock re-lock timeout, FLAG_SECURE switch, Quick Cover (toolbar, settings, Quick Settings tile).
+- Ledger with realized-cash basis, net cash per labor hour, customisable labels, CSV and Markdown export.
+- Workload insights and optional daily summaries.
+- Thread preservation ZIP with SHA-256 manifest; encrypted `.sovbak` backup with merge/overwrite restore and card re-linking by number; unlinked-cards screen.
+- Settings pack export/import with section confirmation and undo.
+- Warnings before every unencrypted export.
+- Release tooling: `scripts/verify-apk.sh`, `scripts/release-artifacts.sh`; owner signing workflow.
+
+### Changed
+- Messages from blocked numbers, blocked keywords and unknown senders are kept read and archived instead of deleted (switchable).
+- Vault schema 3 and backup content v2: existing ledger days are kept as legacy days, never reinterpreted.
+
+### Security
+- `MmsReceiver` is no longer exported (an installed app could make it delete files in app storage).
+- User regex rules run with a 100 ms budget; imports are size-limited (1 MB pack, 32 MB backup).
+- Release build strips `Log.v/d/i`.
+
+### Removed
+- Upstream GitHub Actions workflows (they used FossifyOrg's release secrets and schedules).
+
 ## [1.10.3] - 2026-11-09
 ### Changed
 - Updated translations

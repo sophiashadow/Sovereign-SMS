@@ -135,8 +135,8 @@
     <string name="sv_add_starters">Add starter set (off until you enable it)</string>
     <string name="sv_starters_added">Starter set added. Review and edit before relying on it.</string>
     <string name="sv_guard_invalid">Ignored, invalid pattern: %s</string>
-    <string name="sv_export_pack">Export everything (JSON)</string>
-    <string name="sv_import_pack">Import rules, guard and templates (JSON)</string>
+    <string name="sv_export_pack">Export settings pack: rules, guard, templates, flags (JSON)</string>
+    <string name="sv_import_pack">Import settings pack (JSON)</string>
     <string name="sv_card">Client card</string>
     <string name="sv_card_alias_hint">Local alias (never written to Contacts)</string>
     <string name="sv_card_stage">Screening</string>

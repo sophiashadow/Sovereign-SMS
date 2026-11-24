@@ -2,7 +2,7 @@
 
 Date: 2026-11-24.
 
-**Scope.** `sovereign-sms-1-foss-release.apk` (package `com.sovereignops.sms`, versionCode 1, versionName 0.1.0, compile and target SDK 36), built from this branch. The release build is R8-minified and signed with a throwaway test key that is not kept.
+**Scope.** `sovereign-sms-1-foss-release.apk` (package `com.sovereignops.sms`, versionCode 1, versionName 0.1.0-alpha.1, compile and target SDK 36), built from this branch. The release build is R8-minified and signed with a throwaway test key that is not kept.
 
 **Method.**
 - The merged manifest (`aapt2 dump xmltree` and `aapt2 dump permissions`).
@@ -50,7 +50,7 @@ No dynamic, device or carrier testing has been done. Android 17 and One UI point
 ## Release hardening
 
 - **Not debuggable.** The release manifest has no `debuggable` attribute.
-- **Signature.** `apksigner verify` passes with v2 signing. The certificate is the throwaway test key (SHA-256 `5284987520e892756df6843979ac2c560f20b5d526a203326d9fdfae078a88c5`). The owner must re-sign with their own key (`DEPLOY_SAMSUNG_ONEUI.md` §2).
+- **Signature.** `apksigner verify` passes with v2 signing. The certificate is the throwaway test key (SHA-256 `5284987520e892756df6843979ac2c560f20b5d526a203326d9fdfae078a88c5`). The owner must sign with their own key (`BUILD_AND_SIGNING.md` §3); `scripts/verify-apk.sh` then pins it.
 - **16 KB pages.** `zipalign -c -P 16 -v 4` passes. Every native library (`libsqlcipher.so` and `libandroidx.graphics.path.so`, 4 ABIs each) has LOAD segments aligned to 0x4000.
 - **R8.**
   - `-keep class net.zetetic.** { *; }` keeps SQLCipher, which is reached from JNI and Room.
@@ -129,4 +129,5 @@ available** (no `/dev/kvm`), so nothing below was reproduced dynamically.
 - **System block list.** *Inference:* numbers on Android's own block list may be dropped before any app sees them. Sovereign's Quarantine list is the preserving alternative, and the app warns before you block at OS level. Needs a device test.
 - **App lock.** Upstream's lock covers every app screen (Fossify `BaseSimpleActivity.onResume` → `maybeLaunchAppUnlockActivity`, checked by disassembly). It hasn't been re-verified on a device, and it doesn't offer the device screen lock as a method.
 - **Encryption.** Carrier SMS is not end-to-end encrypted, and this app doesn't change that.
+- **Unencrypted exports.** The thread ZIP, settings pack, ledger CSV/Markdown and upstream message export are plain files. Each shows a warning naming what it contains (never blocks). Settings-pack import names the sections it replaces, asks first and offers Undo.
 - **Signing.** The release key used here is throwaway. Production needs the owner's keystore and a pinned certificate digest (`BUILD_AND_SIGNING.md`).

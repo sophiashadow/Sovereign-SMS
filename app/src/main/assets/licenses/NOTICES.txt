@@ -2,16 +2,39 @@ Open-source notices for components added to this build
 =======================================================
 
 This app is a modified version of Fossify Messages (GPL-3.0-or-later); its own
-licence and notices are shown under About in the app and in its source.
+licence is shown under About in the app and in its source.
 
 SQLCipher for Android (net.zetetic:sqlcipher-android 4.20.0)
   Licence: BSD-3-Clause. Copyright (c) 2008-2023, ZETETIC LLC.
   Full text: licenses/sqlcipher-android-BSD-3-Clause.txt (below).
   Bundles SQLite 3.54.1 (public domain) and LibTomCrypt (The LibTom license,
-  public-domain dedication; text below).
+  public-domain dedication; full text: licenses/libtomcrypt-Unlicense.txt, below).
 
 AndroidX Room, Biometric and other AndroidX libraries
   Licence: Apache-2.0 (full text: licenses/Apache-2.0.txt).
 
 kotlinx.serialization
   Licence: Apache-2.0 (full text: licenses/Apache-2.0.txt).
+
+Libraries inherited from Fossify Messages
+-----------------------------------------
+
+Fossify Commons (org.fossify:commons 7.1.3)
+  Licence: GPL-3.0. The licence of this app as a whole.
+
+IndicatorFastScroll (org.fossify:IndicatorFastScroll 4524cd0b61, from reddit/IndicatorFastScroll)
+  Licence: MIT. Copyright (c) 2018 Reddit, Inc.
+  Full text: licenses/IndicatorFastScroll-MIT.txt (below).
+
+ez-vcard (com.googlecode.ez-vcard:ez-vcard 0.12.2)
+  Licence: BSD-2-Clause. Copyright (c) 2012-2026, Michael Angstadt.
+  Full text: licenses/ez-vcard-BSD-2-Clause.txt (below).
+
+mmslib (org.fossify:mmslib 1.0.1) and EventBus (org.greenrobot:eventbus 3.3.1)
+  Licence: Apache-2.0 (full text: licenses/Apache-2.0.txt).
+  mmslib includes the W3C SMIL DOM interfaces (org.w3c.dom.smil), Copyright (c) 2000
+  World Wide Web Consortium (Massachusetts Institute of Technology, Institut National de
+  Recherche en Informatique et en Automatique, Keio University). All Rights Reserved.
+  Distributed under the W3C Software Notice and License (licenses/W3C-19980720.txt, below).
+  Modified upstream: FILL_AUTO, getFillDefault() and setFillDefault() added to ElementTime.
+  Source: https://github.com/FossifyOrg/mmslib
