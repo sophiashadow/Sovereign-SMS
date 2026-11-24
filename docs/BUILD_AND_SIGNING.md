@@ -146,12 +146,13 @@ The script doesn't sign, tag, push or publish. The checksums are versioned by th
   - every dependency, in `gradle/libs.versions.toml`;
   - build-tools 36.0.0.
 - `dependenciesInfo.includeInApk = false`, so there's no Google-encrypted dependency blob.
+- AGP writes `META-INF/version-control-info.textproto` into the APK, holding the git commit SHA of `HEAD`. Each APK therefore names its commit, and its hash changes with every commit even when no code changed. The file has no field for uncommitted changes (*inference:* a dirty-tree build would still name `HEAD`), so **build releases only from a clean, committed tree** (`git status --porcelain` empty). `release-artifacts.sh` refuses a dirty tree, but the build itself doesn't.
 - The source archive is `git archive` piped through `gzip -n`, with no timestamps, so it's stable for a given commit.
 
 **Check that a release was built from a given commit.** Two methods:
 
 - **Byte-identical rebuild.** Rebuild the commit with the same JDK and build-tools, sign it with the same key, and compare the SHA-256 of the two APKs. RSA v2 signatures are deterministic, so identical inputs give identical files.
-- **Content comparison, without the key.** Unzip both APKs and compare every entry: `diff -r <(cd a && find . -type f -exec sha256sum {} +|sort -k2) <(cd b && …)`. The signature lives in the APK signing block, not in an entry.
+- **Content comparison, without the key.** Unzip both APKs and compare every entry: `diff <(cd a && find . -type f -exec sha256sum {} + | sort -k2) <(cd b && find . -type f -exec sha256sum {} + | sort -k2)`. The signature lives in the APK signing block, not in an entry. `version-control-info.textproto` should name the commit you rebuilt.
 
 What was checked in this repository and how is recorded in the release notes, under Verification.
 
