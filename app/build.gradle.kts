@@ -25,7 +25,7 @@ fun hasSigningVars(): Boolean {
 
 base {
     val versionCode = project.property("VERSION_CODE").toString().toInt()
-    archivesName = "messages-$versionCode"
+    archivesName = "sovereign-sms-$versionCode"
 }
 
 android {
@@ -115,7 +115,9 @@ android {
         )
     }
 
-    namespace = project.property("APP_ID").toString()
+    // Kotlin sources keep the upstream package so upstream merges stay clean;
+    // only the installed application ID is Sovereign SMS (see gradle.properties).
+    namespace = "org.fossify.messages"
 
     lint {
         checkReleaseBuilds = false

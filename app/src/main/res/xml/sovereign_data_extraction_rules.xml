@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sovereign SMS: nothing app-owned goes to cloud backup (message cache DB, settings,
+     rules). Direct device-to-device transfer stays allowed. SMS/MMS themselves live in
+     the system Telephony provider and are not part of this app's backup. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+</data-extraction-rules>
