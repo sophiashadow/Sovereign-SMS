@@ -356,7 +356,9 @@ class SovereignSettingsActivity : SimpleActivity() {
         svStartersHolder.setOnClickListener { addStarters() }
         svPreviewKnownHolder.setOnClickListener { svPreviewKnown.toggle() }
         svPreviewRunHolder.setOnClickListener { preview() }
-        svExportHolder.setOnClickListener { exportLauncher.launch("sovereign-sms-pack.json") }
+        svExportHolder.setOnClickListener {
+            Unencrypted.confirm(this@SovereignSettingsActivity, R.string.sv_unencrypted_pack) { exportLauncher.launch("sovereign-sms-pack.json") }
+        }
         svImportHolder.setOnClickListener { importLauncher.launch(arrayOf("application/json", "text/plain")) }
         svBackupHolder.setOnClickListener {
             saveText()

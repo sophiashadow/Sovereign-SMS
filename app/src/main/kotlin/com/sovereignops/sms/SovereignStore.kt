@@ -180,12 +180,24 @@ class SovereignStore(context: Context) {
         get() = prefs.getLong(KEY_SUM_LAST, Long.MIN_VALUE).takeIf { it != Long.MIN_VALUE }?.let { java.time.LocalDate.ofEpochDay(it) }
         set(value) = prefs.edit { if (value == null) remove(KEY_SUM_LAST) else putLong(KEY_SUM_LAST, value.toEpochDay()) }
 
+    /** Ledger wording the owner chose; null = the neutral defaults. Device-local, not in backups. */
+    var ledgerUnitTerm: String?
+        get() = prefs.getString(KEY_LEDGER_UNIT, null)?.takeIf { it.isNotBlank() }
+        set(value) = prefs.edit { if (value.isNullOrBlank()) remove(KEY_LEDGER_UNIT) else putString(KEY_LEDGER_UNIT, value.trim().take(TERM_MAX)) }
+
+    var ledgerServiceTerm: String?
+        get() = prefs.getString(KEY_LEDGER_SERVICE, null)?.takeIf { it.isNotBlank() }
+        set(value) = prefs.edit { if (value.isNullOrBlank()) remove(KEY_LEDGER_SERVICE) else putString(KEY_LEDGER_SERVICE, value.trim().take(TERM_MAX)) }
+
     var heldCount: Int
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
 
     companion object {
         const val PREFS = "sovereign_sms"
+        private const val KEY_LEDGER_UNIT = "ledger_unit_term"
+        private const val KEY_LEDGER_SERVICE = "ledger_service_term"
+        private const val TERM_MAX = 40
         private const val KEY_PRESERVE = "preserve_screened"
         private const val KEY_RULES = "rules_json"
         private const val KEY_POLICY = "policy_"

@@ -16,7 +16,6 @@ import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.core.backup.Backup
 import com.sovereignops.sms.core.backup.BackupContent
 import com.sovereignops.sms.core.backup.CardDoc
-import com.sovereignops.sms.core.backup.LedgerDoc
 import com.sovereignops.sms.core.backup.QuarantineDoc
 import com.sovereignops.sms.core.backup.RestoreMode
 import com.sovereignops.sms.core.backup.SovBak
@@ -78,7 +77,9 @@ class SovereignPortabilityActivity : SimpleActivity() {
         setContentView(status)
         if (savedInstanceState != null) return
         when (intent.action) {
-            ACTION_PRESERVE -> zipLauncher.launch("thread-${threadId}-${LocalDate.now()}.zip")
+            ACTION_PRESERVE -> Unencrypted.confirm(this, R.string.sv_unencrypted_zip, onCancel = ::finish) {
+                zipLauncher.launch("thread-${threadId}-${LocalDate.now()}.zip")
+            }
             ACTION_BACKUP -> askPassword(confirm = true) { backupLauncher.launch("sovereign-sms-${LocalDate.now()}.sovbak") }
             ACTION_RESTORE -> restoreLauncher.launch(arrayOf("application/octet-stream", "*/*"))
             else -> finish()
@@ -210,7 +211,7 @@ class SovereignPortabilityActivity : SimpleActivity() {
                     r.checked, r.tier, r.optIn, r.notes, r.timeWindow, r.pings, r.lastContacted)
             },
             quarantine = dao.quarantine().map { QuarantineDoc(it.address, it.addedAt) },
-            ledger = dao.ledger().map { LedgerDoc(it.date, it.roomCostCents, it.booked, it.showed, it.grossCents, it.sessionHours, it.overheadHours, it.note) },
+            ledger = dao.ledger().map { it.toDoc() },
         )
     }
 
@@ -290,9 +291,7 @@ class SovereignPortabilityActivity : SimpleActivity() {
                             addresses = if (d.threadId < 0) d.addresses.joinToString(",").ifEmpty { null } else null))
                     }
                     merged.quarantine.forEach { dao.putQuarantine(QuarantineRow(it.address, it.addedAt)) }
-                    merged.ledger.forEach { l ->
-                        dao.addLedger(LedgerRow(0, l.date, l.roomCostCents, l.booked, l.showed, l.grossCents, l.sessionHours, l.overheadHours, l.note))
-                    }
+                    merged.ledger.forEach { dao.addLedger(LedgerRow.fromDoc(it)) }
                 }
                 if (mode == RestoreMode.OVERWRITE) {
                     val store = Sovereign.store(this)

@@ -20,7 +20,7 @@ import javax.crypto.spec.GCMParameterSpec
 
 @Database(
     entities = [CardRow::class, QuarantineRow::class, DismissalRow::class, TraceRow::class, LedgerRow::class, CounterRow::class, ResponseTimeRow::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class VaultDatabase : RoomDatabase() {
@@ -91,12 +91,19 @@ object Vault {
         }
     }
 
+    /** Schema 3: the ledger's basis and cash columns. Additive; existing rows become legacy days, unchanged. */
+    internal val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            VaultMigrations.SQL_2_3.forEach(db::execSQL)
+        }
+    }
+
     private fun build(context: Context, dek: ByteArray): VaultDatabase {
         // A raw 256-bit key ("x'…'") skips SQLCipher's passphrase KDF: the key is already random.
         val raw = "x'" + dek.joinToString("") { "%02x".format(it) } + "'"
         return Room.databaseBuilder(context, VaultDatabase::class.java, DB_NAME)
             .openHelperFactory(SupportOpenHelperFactory(raw.toByteArray(Charsets.US_ASCII)))
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 

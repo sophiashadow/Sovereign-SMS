@@ -1,5 +1,6 @@
 package com.sovereignops.sms.vault
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.Insert
@@ -74,6 +75,10 @@ data class TraceRow(
     val explanation: String,
 )
 
+/**
+ * Schema 3 added [basis] and the cash columns. Rows saved earlier read basis 0 (legacy) and
+ * zero cash: they keep their gross and room cost and are never reported as realized cash.
+ */
 @Entity(tableName = "ledger")
 data class LedgerRow(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -85,14 +90,49 @@ data class LedgerRow(
     val sessionHours: Double,
     val overheadHours: Double,
     val note: String?,
+    /** 0 = legacy (gross and room cost), 1 = cash. */
+    @ColumnInfo(defaultValue = "0") val basis: Int = BASIS_LEGACY,
+    @ColumnInfo(defaultValue = "0") val cashReceivedCents: Long = 0,
+    @ColumnInfo(defaultValue = "0") val refundCents: Long = 0,
+    @ColumnInfo(defaultValue = "0") val expenseCents: Long = 0,
+    @ColumnInfo(defaultValue = "0") val receivableCents: Long = 0,
+    @ColumnInfo(defaultValue = "0") val restrictedCreditCents: Long = 0,
 ) {
     fun toEntry() = com.sovereignops.sms.core.ledger.LedgerEntry(
         id, java.time.LocalDate.parse(date), roomCostCents, booked, showed, grossCents, sessionHours, overheadHours, note,
+        basis = when (basis) {
+            BASIS_LEGACY -> com.sovereignops.sms.core.ledger.Basis.LEGACY
+            BASIS_CASH -> com.sovereignops.sms.core.ledger.Basis.CASH
+            else -> error("unknown ledger basis $basis")
+        },
+        cashReceivedCents = cashReceivedCents, refundCents = refundCents, expenseCents = expenseCents,
+        receivableCents = receivableCents, restrictedCreditCents = restrictedCreditCents,
+    )
+
+    fun toDoc() = com.sovereignops.sms.core.backup.LedgerDoc(
+        date, roomCostCents, booked, showed, grossCents, sessionHours, overheadHours, note,
+        basis = if (basis == BASIS_CASH) com.sovereignops.sms.core.backup.LedgerDoc.CASH else com.sovereignops.sms.core.backup.LedgerDoc.LEGACY,
+        cashReceivedCents = cashReceivedCents, refundCents = refundCents, expenseCents = expenseCents,
+        receivableCents = receivableCents, restrictedCreditCents = restrictedCreditCents,
     )
 
     companion object {
+        const val BASIS_LEGACY = 0
+        const val BASIS_CASH = 1
+
         fun from(e: com.sovereignops.sms.core.ledger.LedgerEntry) = LedgerRow(
             e.id, e.date.toString(), e.roomCostCents, e.clientsBooked, e.clientsShowed, e.grossCents, e.sessionHours, e.overheadHours, e.note,
+            basis = if (e.basis == com.sovereignops.sms.core.ledger.Basis.CASH) BASIS_CASH else BASIS_LEGACY,
+            cashReceivedCents = e.cashReceivedCents, refundCents = e.refundCents, expenseCents = e.expenseCents,
+            receivableCents = e.receivableCents, restrictedCreditCents = e.restrictedCreditCents,
+        )
+
+        /** A restored day. The backup was validated first, so basis is LEGACY or CASH. */
+        fun fromDoc(d: com.sovereignops.sms.core.backup.LedgerDoc) = LedgerRow(
+            0, d.date, d.roomCostCents, d.booked, d.showed, d.grossCents, d.sessionHours, d.overheadHours, d.note,
+            basis = if (d.basis == com.sovereignops.sms.core.backup.LedgerDoc.CASH) BASIS_CASH else BASIS_LEGACY,
+            cashReceivedCents = d.cashReceivedCents, refundCents = d.refundCents, expenseCents = d.expenseCents,
+            receivableCents = d.receivableCents, restrictedCreditCents = d.restrictedCreditCents,
         )
     }
 }

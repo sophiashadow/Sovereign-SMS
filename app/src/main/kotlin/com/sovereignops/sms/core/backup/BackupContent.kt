@@ -22,6 +22,10 @@ data class CardDoc(
 @Serializable
 data class QuarantineDoc(val address: String, val addedAt: Long)
 
+/**
+ * One ledger day. Content version 1 had only the first eight fields; a day read from a version 1
+ * file has no `basis` and so stays [LEGACY] (gross and room cost, never read as realized cash).
+ */
 @Serializable
 data class LedgerDoc(
     val date: String,
@@ -32,13 +36,24 @@ data class LedgerDoc(
     val sessionHours: Double,
     val overheadHours: Double,
     val note: String? = null,
-)
+    val basis: String = LEGACY,
+    val cashReceivedCents: Long = 0,
+    val refundCents: Long = 0,
+    val expenseCents: Long = 0,
+    val receivableCents: Long = 0,
+    val restrictedCreditCents: Long = 0,
+) {
+    companion object {
+        const val LEGACY = "LEGACY"
+        const val CASH = "CASH"
+    }
+}
 
 /** What a `.sovbak` holds: the settings pack and checklist, and the vault's cards, quarantine list and ledger. */
 @Serializable
 data class BackupContent(
     val format: String = FORMAT,
-    val version: Int = 1,
+    val version: Int = VERSION,
     val pack: String? = null,
     val checklist: String? = null,
     val cards: List<CardDoc> = emptyList(),
@@ -47,6 +62,9 @@ data class BackupContent(
 ) {
     companion object {
         const val FORMAT = "sovereign-sms/backup"
+
+        /** 2 added the ledger's cash fields. An older app refuses a version 2 file instead of dropping them. */
+        const val VERSION = 2
     }
 }
 
@@ -61,7 +79,14 @@ object Backup {
 
     fun decode(bytes: ByteArray): BackupContent {
         val c = json.decodeFromString(BackupContent.serializer(), bytes.toString(Charsets.UTF_8))
-        require(c.format == BackupContent.FORMAT && c.version == 1) { "Unsupported backup content" }
+        require(c.format == BackupContent.FORMAT) { "Not a Sovereign SMS backup" }
+        require(c.version <= BackupContent.VERSION) {
+            "This backup was made by a newer version of the app (content version ${c.version}; this app reads 1 to ${BackupContent.VERSION}). Update the app, then restore."
+        }
+        require(c.version >= 1) { "Unsupported backup content version ${c.version}" }
+        c.ledger.firstOrNull { it.basis != LedgerDoc.LEGACY && it.basis != LedgerDoc.CASH }?.let {
+            throw IllegalArgumentException("Unsupported ledger basis ${it.basis} on ${it.date}")
+        }
         return c
     }
 

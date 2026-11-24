@@ -79,6 +79,7 @@ object SovBak {
         val h = runCatching { json.decodeFromString(SovBakHeader.serializer(), file.copyOfRange(0, nl).toString(Charsets.UTF_8)) }
             .getOrElse { throw BadFile("Not a .sovbak file") }
         if (h.format != SovBakHeader.FORMAT) throw BadFile("Not a .sovbak file")
+        if (h.version > 1) throw BadFile("This .sovbak was made by a newer version of the app (file version ${h.version}). Update the app, then restore.")
         if (h.version != 1) throw BadFile("Unsupported .sovbak version ${h.version}")
         if (h.kdf != SovBakHeader.KDF || h.cipher != SovBakHeader.CIPHER) throw BadFile("Unsupported algorithms")
         if (h.iterations !in MIN_ITERATIONS..MAX_ITERATIONS) throw BadFile("Iteration count out of range")
