@@ -36,7 +36,7 @@ enum class Category { PERSONAL, PROFESSIONAL, UNKNOWN }
  * FOCUS holds everything except priority and one-time codes; PERSONAL (off duty)
  * applies [RuleConfig.offDutyAction] to professional and unknown conversations.
  */
-enum class WorkspaceMode { ALL, PERSONAL, PROFESSIONAL, FOCUS }
+enum class WorkspaceMode { ALL, PERSONAL, PROFESSIONAL, QUARANTINE, FOCUS }
 
 enum class KeywordEffect {
     /** Tag only. */
@@ -51,7 +51,7 @@ enum class KeywordEffect {
 
 /** Identifies which rule decided, so the UI can explain and the user can reverse it. */
 enum class RuleId {
-    RULES_OFF, PRIORITY_CONTACT, CONVERSATION_PRIORITY, CONVERSATION_MUTED, ONE_TIME_CODE,
+    RULES_OFF, QUARANTINED, COVER, PRIORITY_CONTACT, CONVERSATION_PRIORITY, CONVERSATION_MUTED, ONE_TIME_CODE,
     KEYWORD_PRIORITY, FOCUS, WORKSPACE_FOCUS, OFF_DUTY, QUIET_HOURS, UNKNOWN_SENDER, KEYWORD_SILENT, FLAG_SILENT, COOLDOWN, DEFAULT,
 }
 
@@ -121,6 +121,10 @@ data class IncomingMessage(
     val workspaceMode: WorkspaceMode = WorkspaceMode.ALL,
     /** Incoming red flags that matched (already evaluated by the guard engine). */
     val flags: List<FlagSignal> = emptyList(),
+    /** Sender is on the app's own Quarantine list (not Android's block list). */
+    val quarantined: Boolean = false,
+    /** Quick Cover is on: only personal conversations and one-time codes may alert. */
+    val cover: Boolean = false,
 )
 
 /** The parts of an incoming-flag match the rules engine acts on. */
@@ -160,6 +164,15 @@ object RuleEngine {
         val keywordLines = keywordHits.map { "Keyword “${it.keyword.trim()}” matched" + (it.tag?.let { t -> " → tag “$t”" } ?: "") } +
             message.flags.map { "Flag “${it.name}” matched" + (it.tag?.let { t -> " → tag “$t”" } ?: "") }
 
+        // Quarantine is the owner's explicit screen: kept and muted even with rules off.
+        if (message.quarantined) {
+            return Decision(Alert.SILENT, RuleId.QUARANTINED, emptyList(), tags, listOf("Sender is quarantined: stored, marked read, muted") + keywordLines)
+        }
+        val isCode = config.alertOneTimeCodes && OneTimeCodes.looksLikeCode(message.body)
+        if (message.cover && message.category != Category.PERSONAL && !isCode) {
+            return Decision(Alert.HELD, RuleId.COVER, emptyList(), tags, listOf("Quick Cover is on: ${message.category.name.lowercase()} conversation held") + keywordLines)
+        }
+
         if (!config.enabled) {
             return Decision(Alert.ALERT, RuleId.RULES_OFF, emptyList(), tags, listOf("Rules are switched off") + keywordLines)
         }
@@ -176,7 +189,7 @@ object RuleEngine {
         if (message.conversationPolicy == ConversationPolicy.MUTED) {
             candidates += Triple(RuleId.CONVERSATION_MUTED, Alert.SILENT, "Conversation muted")
         }
-        if (config.alertOneTimeCodes && OneTimeCodes.looksLikeCode(message.body)) {
+        if (isCode) {
             candidates += Triple(RuleId.ONE_TIME_CODE, Alert.ALERT, "Looks like a one-time code")
         }
         keywordHits.firstOrNull { it.effect == KeywordEffect.PRIORITY }?.let {
@@ -245,4 +258,18 @@ object OneTimeCodes {
     private val digits = Regex("(?<![\\d])\\d{4,8}(?![\\d])")
 
     fun looksLikeCode(body: String): Boolean = keyword.containsMatchIn(body) && digits.containsMatchIn(body)
+
+    /** The code itself, for the "Copy code" action: the digit run nearest the keyword. */
+    fun extract(body: String): String? {
+        if (!looksLikeCode(body)) return null
+        val k = keyword.find(body)!!.range
+        return digits.findAll(body).minByOrNull { m ->
+            val r = m.range
+            when {
+                r.first > k.last -> r.first - k.last
+                r.last < k.first -> k.first - r.last
+                else -> 0
+            }
+        }?.value
+    }
 }

@@ -17,6 +17,7 @@ class App : FossifyApp() {
 
     override fun onCreate() {
         super.onCreate()
+        com.sovereignops.sms.SovereignLock.init(this) // Sovereign SMS
         if (hasPermission(PERMISSION_READ_CONTACTS)) {
             listOf(
                 ContactsContract.Contacts.CONTENT_URI,

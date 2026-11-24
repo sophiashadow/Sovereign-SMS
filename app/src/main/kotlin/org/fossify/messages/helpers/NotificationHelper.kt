@@ -54,6 +54,7 @@ class NotificationHelper(private val context: Context) {
         val hasCustomNotifications =
             context.config.customNotifications.contains(threadId.toString())
         val notificationChannelId = when {
+            quiet && sovereignChannel != null -> sovereignChannel // Sovereign SMS: quarantine channel
             quiet -> SovereignNotifications.quietChannel(context)
             hasCustomNotifications -> threadId.toString()
             sovereignChannel != null -> sovereignChannel
@@ -161,6 +162,8 @@ class NotificationHelper(private val context: Context) {
             setOnlyAlertOnce(alertOnlyOnce)
             if (quiet) setSilent(true) else setSound(soundUri, AudioManager.STREAM_NOTIFICATION)
         }
+
+        SovereignNotifications.decorate(context, builder, notificationChannelId, body, notificationId) // Sovereign SMS
 
         if (replyAction != null && context.config.lockScreenVisibilitySetting == LOCK_SCREEN_SENDER_MESSAGE) {
             builder.addAction(replyAction)

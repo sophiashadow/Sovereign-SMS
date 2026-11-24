@@ -13,6 +13,9 @@ import com.sovereignops.sms.core.guard.DraftGuard
 import com.sovereignops.sms.core.guard.GuardContext
 import com.sovereignops.sms.core.rules.IncomingMessage
 import com.sovereignops.sms.core.rules.RuleEngine
+import com.sovereignops.sms.core.rules.RuleId
+import org.fossify.messages.extensions.conversationsDB
+import org.fossify.messages.extensions.markThreadMessagesRead
 import com.sovereignops.sms.core.screening.Disposition
 import com.sovereignops.sms.core.screening.Screening
 import com.sovereignops.sms.core.screening.ScreeningInput
@@ -89,10 +92,12 @@ object Sovereign {
             category = category,
             workspaceMode = store.workspaceMode,
             flags = flagHits.map { FlagSignal(it.rule.name, it.rule.silent, it.rule.tag) },
+            quarantined = com.sovereignops.sms.vault.VaultCache.isQuarantinedFresh(context, address),
+            cover = store.coverActive,
         )
         val decision = RuleEngine.evaluate(store.ruleConfig, message)
         store.addThreadTags(threadId, decision.tags)
-        return decision to Workspace.channel(decision, category)
+        return decision to Workspace.channel(decision, category, regular = card?.stage == com.sovereignops.sms.core.crm.Stage.REGULAR)
     }
 
     /**
@@ -108,7 +113,16 @@ object Sovereign {
                 store(context).markAlerted(threadId, System.currentTimeMillis())
                 post(false, channel)
             }
-            Alert.SILENT -> post(true, null)
+            Alert.SILENT -> if (result?.first?.decidedBy == RuleId.QUARANTINED) {
+                // Quarantine: the message is already stored; mark it read and post nothing audible.
+                runCatching {
+                    context.markThreadMessagesRead(threadId)
+                    context.conversationsDB.markRead(threadId)
+                }
+                post(true, channel)
+            } else {
+                post(true, null)
+            }
             Alert.HELD -> SovereignNotifications.addHeld(context)
         }
     }
@@ -118,24 +132,72 @@ object SovereignNotifications {
     private const val QUIET_CHANNEL = "sovereign_quiet"
     private const val HELD_CHANNEL = "sovereign_held"
     private const val HELD_ID = 0x5050_0001
+    private const val QUARANTINE_CHANNEL = "sovereign_quarantine"
 
     /** Per-category channels, so sound, vibration and lock-screen display are set per side in system settings. */
     fun channel(context: Context, kind: ChannelKind): String {
         if (kind == ChannelKind.QUIET) return quietChannel(context)
+        val nm = context.getSystemService(NotificationManager::class.java)
+        if (kind == ChannelKind.QUARANTINE) {
+            nm.createNotificationChannel(
+                NotificationChannel(QUARANTINE_CHANNEL, context.getString(R.string.sv_channel_quarantine), NotificationManager.IMPORTANCE_MIN).apply {
+                    lockscreenVisibility = android.app.Notification.VISIBILITY_SECRET
+                    setSound(null, null)
+                    enableVibration(false)
+                    setShowBadge(false)
+                },
+            )
+            return QUARANTINE_CHANNEL
+        }
         val (id, name, importance) = when (kind) {
             ChannelKind.PERSONAL -> Triple("sovereign_personal", R.string.sv_channel_personal, NotificationManager.IMPORTANCE_HIGH)
             ChannelKind.PROFESSIONAL -> Triple("sovereign_professional", R.string.sv_channel_professional, NotificationManager.IMPORTANCE_HIGH)
             ChannelKind.UNKNOWN -> Triple("sovereign_unknown", R.string.sv_channel_unknown, NotificationManager.IMPORTANCE_DEFAULT)
             ChannelKind.PRIORITY -> Triple("sovereign_priority", R.string.sv_channel_priority, NotificationManager.IMPORTANCE_HIGH)
             ChannelKind.OTP -> Triple("sovereign_otp", R.string.sv_channel_otp, NotificationManager.IMPORTANCE_HIGH)
-            ChannelKind.QUIET -> error("handled above")
+            ChannelKind.QUIET, ChannelKind.QUARANTINE -> error("handled above")
         }
         val ch = NotificationChannel(id, context.getString(name), importance).apply {
             // Professional and unknown default to hiding content on the lock screen; the user can change it.
             if (kind == ChannelKind.PROFESSIONAL || kind == ChannelKind.UNKNOWN) lockscreenVisibility = android.app.Notification.VISIBILITY_PRIVATE
         }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
+        nm.createNotificationChannel(ch)
         return id
+    }
+
+    /** Channels whose lock-screen form is a neutral "New message" with no sender or text. */
+    private val neutral = setOf("sovereign_professional", "sovereign_unknown", QUARANTINE_CHANNEL)
+
+    /**
+     * Applied to every message notification: a neutral public version on professional,
+     * unknown and quarantine channels, and a "Copy code" action when the text holds a
+     * one-time code. Neither sends anything.
+     */
+    fun decorate(context: Context, builder: NotificationCompat.Builder, channelId: String, body: String, notificationId: Int) {
+        if (channelId in neutral) {
+            builder.setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            builder.setPublicVersion(
+                NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.drawable.ic_messenger)
+                    .setContentTitle(context.getString(R.string.new_message))
+                    .build(),
+            )
+        }
+        val code = if (Sovereign.store(context).copyCodeAction) com.sovereignops.sms.core.rules.OneTimeCodes.extract(body) else null
+        if (code != null) {
+            val copy = PendingIntent.getBroadcast(
+                context, notificationId xor 0x0C0D,
+                Intent(context, CopyCodeReceiver::class.java).putExtra(CopyCodeReceiver.EXTRA_CODE, code),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            builder.addAction(R.drawable.ic_messenger, context.getString(R.string.sv_copy_code), copy)
+        }
+    }
+
+    /** Removes posted notifications that Quick Cover hides (professional, unknown, quarantine). */
+    fun clearHidden(context: Context) {
+        val nm = context.getSystemService(NotificationManager::class.java)
+        runCatching { nm.activeNotifications.filter { it.notification.channelId in neutral }.forEach { nm.cancel(it.tag, it.id) } }
     }
 
     fun quietChannel(context: Context): String {

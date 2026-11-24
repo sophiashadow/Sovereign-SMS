@@ -20,3 +20,10 @@
 3. **Slice A–F** per the Phase 2/3 mandate: SQLCipher vault and contact cards, a bidirectional pattern engine (incoming red flags, ideas only, no code from private repos), compartmentalization, an availability queue, a schedule engine, forensic export and `.sovbak` backup, and a signed release.
 5. **Private notes** in SQLCipher (a maintained library, with a key wrapped by Android Keystore), plus FLAG_SECURE and a notification-content toggle.
 6. **Signed release process**: owner-held keystore, pinned certificate digest, R8, notices shipped in the APK. Needs owner authorisation.
+
+## Slice C follow-ups (2026-11-24)
+
+- The app lock is upstream's (PIN, pattern or biometrics). It does not offer the system screen lock as a method; Quick Cover's exit prompt does (BIOMETRIC_WEAK or DEVICE_CREDENTIAL). Unifying the two would mean replacing upstream's lock screen, which was not done.
+- Quick Cover filters the inbox and holds alerts. Upstream search and direct thread links (shortcuts, share targets) can still open a Professional thread while cover is on; not gated yet.
+- With no screen lock or biometrics enrolled on the device, leaving Quick Cover needs no authentication.
+- Lock-screen behaviour of the neutral public notification and the Copy code action needs a device test (One UI may restyle both).

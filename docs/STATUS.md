@@ -41,9 +41,14 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | A | Client card (header tap / menu): local alias (never written to Contacts), screening stage, renamable checklist (`#off`, "Deposit / Terms confirmed" off by default), rate tier, time window, availability opt-in, encrypted notes, derived first/last/count | compiled; model tested (CrmTest) |
 | A | Inbox stage dot + alias; alias in notifications (switchable); alias/stage makes a sender known | compiled; resolution tested |
 | A | App Quarantine list (vault table, card toggle) separate from Android's block list; warning before OS blocking and before the system block manager | compiled (receive path is Slice C) |
-| F | Biometric/PIN lock | inherited from upstream Commons (app lock), not re-verified |
-| F | Screenshot protection, notification-content visibility | not started |
+| C | Quarantine receive path: quarantined senders are always received, stored, marked read and posted to a silent secret channel; checked before every other rule, even with rules off | decision tested (QuarantineCoverTest); receive wiring compiled |
+| C | Quarantine workspace mode (inbox chip): shows only quarantined threads; quarantined threads hidden in every other mode | tested (QuarantineWorkspaceTest); chip compiled |
+| C | Channels: Personal, Priority / Regular (priority or card stage Regular), Professional and Unknown (neutral "New message" public version on the lock screen), Codes, Quarantine (min importance, secret, no sound/vibration/badge) | channel choice tested; channels compiled |
+| C | "Copy code" notification action on one-time codes (4–8 digits nearest the keyword; clipboard marked sensitive on API 33+); switchable | extraction tested; action compiled |
+| C | App lock: **upstream's** lock (Settings → Password protection: PIN, pattern or biometrics) reused, not duplicated. Sovereign adds the re-lock timeout (Immediately / 1 min / 5 min / Screen off) and locks on screen-off for Immediate and Screen-off modes | timeout mapping tested (LockPolicyTest); wiring compiled. Upstream's lock does not offer the system screen lock (device credential) as a method |
+| C | FLAG_SECURE toggle (blocks screenshots and the Recents preview) on every activity | compiled |
+| C | Quick Cover: toolbar button, settings switch and Quick Settings tile. On: inbox forced to Personal, Professional/Unknown alerts held, Quarantine hidden; held notifications cleared. Off, or switching to another mode chip: biometrics or device screen lock (BiometricPrompt, BIOMETRIC_WEAK or DEVICE_CREDENTIAL) | engine part tested (QuarantineCoverTest); UI and tile compiled. Without any device lock set, leaving cover needs no authentication |
 | G | Workload insights | not started |
 | — | Signed release build | not done (no signing key; needs owner authorisation) |
 
-Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice B) had 83 tests with 0 failures and 0 errors.
+Test command: `./gradlew testFossDebugUnitTest`. The last run before Slice C (Slice B) had 83 tests with 0 failures and 0 errors.

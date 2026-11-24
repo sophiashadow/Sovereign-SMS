@@ -158,5 +158,6 @@ dependencies {
     detektPlugins(libs.compose.detekt)
     implementation(libs.sqlcipher.android) // Sovereign SMS vault (BSD-3-Clause)
     implementation(libs.androidx.sqlite)
+    implementation(libs.androidx.biometric) // Quick Cover re-auth (Apache-2.0; already transitive via Commons)
     testImplementation(libs.junit)
 }

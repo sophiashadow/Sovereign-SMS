@@ -8,7 +8,7 @@ import com.sovereignops.sms.core.rules.RuleId
 import com.sovereignops.sms.core.rules.WorkspaceMode
 
 /** Notification channels Sovereign posts on, one per category plus priority, codes and quiet. */
-enum class ChannelKind { PERSONAL, PROFESSIONAL, UNKNOWN, PRIORITY, OTP, QUIET }
+enum class ChannelKind { PERSONAL, PROFESSIONAL, UNKNOWN, PRIORITY, OTP, QUIET, QUARANTINE }
 
 object Workspace {
 
@@ -25,16 +25,26 @@ object Workspace {
         }
 
     /** Inbox filter for a workspace mode. FOCUS shows only priority conversations. */
-    fun visible(mode: WorkspaceMode, category: Category, policy: ConversationPolicy): Boolean = when (mode) {
-        WorkspaceMode.ALL -> true
-        WorkspaceMode.PERSONAL -> category == Category.PERSONAL
-        WorkspaceMode.PROFESSIONAL -> category == Category.PROFESSIONAL || category == Category.UNKNOWN
-        WorkspaceMode.FOCUS -> policy == ConversationPolicy.PRIORITY
+    fun visible(mode: WorkspaceMode, category: Category, policy: ConversationPolicy, quarantined: Boolean = false): Boolean = when {
+        mode == WorkspaceMode.QUARANTINE -> quarantined
+        quarantined -> false // quarantined threads appear only under Quarantine
+        else -> when (mode) {
+            WorkspaceMode.ALL -> true
+            WorkspaceMode.PERSONAL -> category == Category.PERSONAL
+            WorkspaceMode.PROFESSIONAL -> category == Category.PROFESSIONAL || category == Category.UNKNOWN
+            WorkspaceMode.FOCUS -> policy == ConversationPolicy.PRIORITY
+            WorkspaceMode.QUARANTINE -> false
+        }
     }
 
-    /** Filter any list of conversations; [category] and [policy] read each item's state. */
-    fun <T> filter(items: List<T>, mode: WorkspaceMode, category: (T) -> Category, policy: (T) -> ConversationPolicy): List<T> =
-        if (mode == WorkspaceMode.ALL) items else items.filter { visible(mode, category(it), policy(it)) }
+    /** Filter any list of conversations; the lambdas read each item's state. */
+    fun <T> filter(
+        items: List<T>,
+        mode: WorkspaceMode,
+        category: (T) -> Category,
+        policy: (T) -> ConversationPolicy,
+        quarantined: (T) -> Boolean = { false },
+    ): List<T> = items.filter { visible(mode, category(it), policy(it), quarantined(it)) }
 
     /**
      * Whether an inbox row's sender counts as known. Upstream titles a thread with the
@@ -52,10 +62,13 @@ object Workspace {
 
     private val priorityRules = setOf(RuleId.PRIORITY_CONTACT, RuleId.CONVERSATION_PRIORITY, RuleId.KEYWORD_PRIORITY)
 
-    fun channel(decision: Decision, category: Category): ChannelKind = when {
+    /** [regular]: the card stage is Regular, which shares the Priority / Regular channel. */
+    fun channel(decision: Decision, category: Category, regular: Boolean = false): ChannelKind = when {
+        decision.decidedBy == RuleId.QUARANTINED -> ChannelKind.QUARANTINE
         decision.alert == Alert.SILENT -> ChannelKind.QUIET
         decision.decidedBy in priorityRules -> ChannelKind.PRIORITY
         decision.decidedBy == RuleId.ONE_TIME_CODE -> ChannelKind.OTP
+        regular -> ChannelKind.PRIORITY
         category == Category.PERSONAL -> ChannelKind.PERSONAL
         category == Category.PROFESSIONAL -> ChannelKind.PROFESSIONAL
         else -> ChannelKind.UNKNOWN

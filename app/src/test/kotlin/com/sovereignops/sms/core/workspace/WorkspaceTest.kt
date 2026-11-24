@@ -69,3 +69,14 @@ class WorkspaceTest {
         assertEquals(ChannelKind.UNKNOWN, Workspace.channel(d(Alert.ALERT, RuleId.DEFAULT), Category.UNKNOWN))
     }
 }
+
+class QuarantineWorkspaceTest {
+    @Test
+    fun `quarantined threads show only in quarantine mode`() {
+        com.sovereignops.sms.core.rules.WorkspaceMode.entries.forEach { mode ->
+            val shown = Workspace.visible(mode, com.sovereignops.sms.core.rules.Category.PERSONAL, com.sovereignops.sms.core.rules.ConversationPolicy.PRIORITY, quarantined = true)
+            org.junit.Assert.assertEquals(mode.name, mode == com.sovereignops.sms.core.rules.WorkspaceMode.QUARANTINE, shown)
+        }
+        org.junit.Assert.assertFalse(Workspace.visible(com.sovereignops.sms.core.rules.WorkspaceMode.QUARANTINE, com.sovereignops.sms.core.rules.Category.PERSONAL, com.sovereignops.sms.core.rules.ConversationPolicy.DEFAULT))
+    }
+}

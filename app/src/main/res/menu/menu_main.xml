@@ -3,6 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="AppCompatResource,AlwaysShowAction">
+    <!-- Sovereign SMS -->
+    <item
+        android:id="@+id/sv_quick_cover"
+        android:icon="@drawable/ic_sv_cover"
+        android:title="@string/sv_cover"
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/show_recycle_bin"
         android:showAsAction="never"

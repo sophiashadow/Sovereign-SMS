@@ -35,11 +35,14 @@ junit = "4.13.2"
 #Sovereign SMS vault
 sqlcipher = "4.20.0"
 androidx-sqlite = "2.7.0"
+# Sovereign SMS: same version Fossify Commons already pulls in transitively
+androidx-biometric = "1.4.0-alpha02"
 [libraries]
 #Testing (Sovereign SMS)
 junit = { module = "junit:junit", version.ref = "junit" }
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
+androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "androidx-biometric" }
 #AndroidX
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidx-lifecycleprocess" }

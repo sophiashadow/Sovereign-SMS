@@ -129,6 +129,26 @@ class SovereignStore(context: Context) {
 
     fun clearThreadTags(threadId: Long) = prefs.edit().remove("$KEY_TAGS$threadId").apply()
 
+    /** Quick Cover: Personal only; Professional and Quarantine need re-authentication. */
+    var coverActive: Boolean
+        get() = prefs.getBoolean(KEY_COVER, false)
+        set(value) = prefs.edit().putBoolean(KEY_COVER, value).apply()
+
+    /** "Copy code" action on one-time-code notifications. */
+    var copyCodeAction: Boolean
+        get() = prefs.getBoolean(KEY_COPY_CODE, true)
+        set(value) = prefs.edit().putBoolean(KEY_COPY_CODE, value).apply()
+
+    /** Timeout for upstream's app lock (Settings → Password protection). */
+    var lockTimeout: com.sovereignops.sms.core.lock.LockTimeout
+        get() = com.sovereignops.sms.core.lock.LockTimeout.parse(prefs.getString(KEY_LOCK_TIMEOUT, null))
+        set(value) = prefs.edit().putString(KEY_LOCK_TIMEOUT, value.name).apply()
+
+    /** FLAG_SECURE: blocks screenshots and hides content in Recents. */
+    var secureScreen: Boolean
+        get() = prefs.getBoolean(KEY_SECURE, false)
+        set(value) = prefs.edit().putBoolean(KEY_SECURE, value).apply()
+
     var heldCount: Int
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
@@ -149,5 +169,9 @@ class SovereignStore(context: Context) {
         private const val KEY_CONFIRM_SEND = "confirm_flagged_send"
         private const val KEY_CHECKLIST = "checklist_items"
         private const val KEY_ALIAS_NOTIF = "alias_in_notifications"
+        private const val KEY_COVER = "quick_cover"
+        private const val KEY_COPY_CODE = "copy_code_action"
+        private const val KEY_LOCK_TIMEOUT = "app_lock_timeout"
+        private const val KEY_SECURE = "secure_screen"
     }
 }

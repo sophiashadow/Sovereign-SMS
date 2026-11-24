@@ -9,6 +9,7 @@ import com.sovereignops.sms.SovereignStore
 import com.sovereignops.sms.core.crm.Checklist
 import com.sovereignops.sms.core.crm.Stage
 import com.sovereignops.sms.core.guard.GuardContext
+import com.sovereignops.sms.core.lock.LockTimeout
 import com.sovereignops.sms.core.pack.Presets
 import com.sovereignops.sms.core.rules.FlagSignal
 import com.sovereignops.sms.core.guard.DraftGuard
@@ -24,6 +25,7 @@ import com.sovereignops.sms.core.rules.RuleEngine
 import com.sovereignops.sms.core.rules.RuleText
 import com.sovereignops.sms.core.rules.TimeWindow
 import org.fossify.commons.dialogs.RadioGroupDialog
+import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getTimePickerDialogTheme
 import org.fossify.commons.extensions.toast
@@ -131,6 +133,11 @@ class SovereignSettingsActivity : SimpleActivity() {
         val c = store.ruleConfig
         svPreserve.isChecked = store.preserveScreened
         svAliasNotif.isChecked = store.aliasInNotifications
+        svLock.text = getString(if (baseConfig.isAppPasswordProtectionOn) R.string.sv_lock_on else R.string.sv_lock_off)
+        svLockTimeout.text = getString(timeoutLabel(store.lockTimeout))
+        svSecure.isChecked = store.secureScreen
+        svCopyCode.isChecked = store.copyCodeAction
+        svCover.isChecked = store.coverActive
         svConfirmSend.isChecked = store.confirmFlaggedSend
         svPresets.text = Presets.all.joinToString(" · ") { it.title.substringBefore(" —") }
         svPreviewStage.text = previewStage?.label ?: getString(R.string.sv_stage_none)
@@ -174,7 +181,34 @@ class SovereignSettingsActivity : SimpleActivity() {
         TimePickerDialog(this, getTimePickerDialogTheme(), { _, h, m -> done(LocalTime.of(h, m)) }, current.hour, current.minute, true).show()
     }
 
+    private fun timeoutLabel(t: LockTimeout) = when (t) {
+        LockTimeout.IMMEDIATE -> R.string.sv_lock_immediate
+        LockTimeout.ONE_MINUTE -> R.string.sv_lock_1m
+        LockTimeout.FIVE_MINUTES -> R.string.sv_lock_5m
+        LockTimeout.SCREEN_OFF -> R.string.sv_lock_screen_off
+    }
+
     private fun wire() = binding.run {
+        // The lock itself is upstream's (Settings → Password protection); this screen sets when it re-locks.
+        svLockHolder.setOnClickListener { toast(R.string.sv_lock_where); finish() }
+        svLockTimeoutHolder.setOnClickListener {
+            val items = ArrayList(LockTimeout.entries.mapIndexed { i, t -> RadioItem(i, getString(timeoutLabel(t)), i) })
+            RadioGroupDialog(this@SovereignSettingsActivity, items, store.lockTimeout.ordinal, R.string.sv_lock_timeout) { i ->
+                store.lockTimeout = LockTimeout.entries[i as Int]
+                com.sovereignops.sms.SovereignLock.apply(this@SovereignSettingsActivity)
+                render()
+            }
+        }
+        svSecureHolder.setOnClickListener {
+            svSecure.toggle()
+            store.secureScreen = svSecure.isChecked
+            com.sovereignops.sms.SovereignLock.secure(this@SovereignSettingsActivity)
+        }
+        svCopyCodeHolder.setOnClickListener { svCopyCode.toggle(); store.copyCodeAction = svCopyCode.isChecked }
+        svCoverHolder.setOnClickListener {
+            if (store.coverActive) com.sovereignops.sms.SovereignCover.turnOff(this@SovereignSettingsActivity) { render() }
+            else { com.sovereignops.sms.SovereignCover.turnOn(this@SovereignSettingsActivity); render() }
+        }
         svPreserveHolder.setOnClickListener { svPreserve.toggle(); store.preserveScreened = svPreserve.isChecked }
         svRulesEnabledHolder.setOnClickListener { svRulesEnabled.toggle(); edit { it.copy(enabled = svRulesEnabled.isChecked) } }
         svAliasNotifHolder.setOnClickListener { svAliasNotif.toggle(); store.aliasInNotifications = svAliasNotif.isChecked }

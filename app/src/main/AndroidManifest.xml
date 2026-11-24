@@ -189,6 +189,25 @@
 
         <receiver android:name=".receivers.SmsStatusSentReceiver" />
 
+        <!-- Sovereign SMS -->
+        <receiver
+            android:name="com.sovereignops.sms.CopyCodeReceiver"
+            android:exported="false" />
+
+        <service
+            android:name="com.sovereignops.sms.QuickCoverTile"
+            android:exported="true"
+            android:icon="@drawable/ic_sv_cover"
+            android:label="@string/sv_cover"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+                android:value="true" />
+        </service>
+
         <receiver android:name=".receivers.SmsStatusDeliveredReceiver" />
 
         <receiver

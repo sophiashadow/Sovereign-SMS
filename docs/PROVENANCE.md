@@ -34,6 +34,7 @@ Versions are pinned in `gradle/libs.versions.toml`.
 | kotlinx-serialization-json | 1.11.0 | Apache-2.0 | JetBrains | runtime |
 | net.zetetic:sqlcipher-android | 4.20.0 | BSD-3-Clause (Zetetic LLC); bundles SQLite (public domain) and OpenSSL libcrypto (Apache-2.0, OpenSSL 3.x) | upstream `LICENSE.txt` in sqlcipher/sqlcipher-android; OpenSSL licence per its 3.x release | runtime (encrypted vault) |
 | androidx.sqlite:sqlite | 2.7.0 | Apache-2.0 | AndroidX standard licence | runtime |
+| androidx.biometric:biometric | 1.4.0-alpha02 | Apache-2.0 | AndroidX standard licence; same version Fossify Commons already resolved transitively, declared directly for Quick Cover re-authentication | runtime |
 | junit:junit | 4.13.2 | EPL-1.0 | — | **test only** (not shipped) |
 
 All runtime licences are compatible with GPL-3.0 distribution. BSD-3-Clause requires the SQLCipher copyright notice and licence to ship with binaries; the release notice is part of Slice F. Neither the test dependency nor the build tooling is distributed.

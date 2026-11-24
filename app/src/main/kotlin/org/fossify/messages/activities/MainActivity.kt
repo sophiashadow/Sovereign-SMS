@@ -94,6 +94,7 @@ class MainActivity : SimpleActivity() {
         setupOptionsMenu()
         refreshMenuItems()
         com.sovereignops.sms.ui.SovereignInbox.setup(this, binding.svModeGroup) { setupConversations(sovereignAll) } // Sovereign SMS
+        com.sovereignops.sms.ui.SovereignInbox.handleIntent(this, intent) { setupConversations(sovereignAll) } // Sovereign SMS
 
         setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.conversationsList))
 
@@ -182,6 +183,7 @@ class MainActivity : SimpleActivity() {
             when (menuItem.itemId) {
                 R.id.show_recycle_bin -> launchRecycleBin()
                 R.id.show_archived -> launchArchivedConversations()
+                R.id.sv_quick_cover -> com.sovereignops.sms.ui.SovereignInbox.toggleCover(this, binding.svModeGroup) { setupConversations(sovereignAll) } // Sovereign SMS
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 else -> return@setOnMenuItemClickListener false

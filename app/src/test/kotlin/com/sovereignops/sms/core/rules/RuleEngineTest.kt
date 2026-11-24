@@ -236,3 +236,31 @@ class FlagRulesTest {
         org.junit.Assert.assertEquals(Alert.ALERT, d.alert)
     }
 }
+
+class QuarantineCoverTest {
+    private val t = java.time.LocalDateTime.of(2026, 1, 5, 12, 0)
+    private fun msg(body: String = "hi", category: Category = Category.PROFESSIONAL, policy: ConversationPolicy = ConversationPolicy.DEFAULT) =
+        IncomingMessage("+19195550142", true, body, policy, t, null, category = category)
+
+    @Test
+    fun `quarantine mutes even a priority conversation and with rules off`() {
+        val d = RuleEngine.evaluate(RuleConfig(enabled = false), msg(policy = ConversationPolicy.PRIORITY).copy(quarantined = true))
+        org.junit.Assert.assertEquals(Alert.SILENT, d.alert)
+        org.junit.Assert.assertEquals(RuleId.QUARANTINED, d.decidedBy)
+    }
+
+    @Test
+    fun `cover holds professional, lets personal and codes through`() {
+        org.junit.Assert.assertEquals(RuleId.COVER, RuleEngine.evaluate(RuleConfig(), msg(policy = ConversationPolicy.PRIORITY).copy(cover = true)).decidedBy)
+        org.junit.Assert.assertEquals(Alert.HELD, RuleEngine.evaluate(RuleConfig(), msg(category = Category.UNKNOWN).copy(cover = true)).alert)
+        org.junit.Assert.assertEquals(Alert.ALERT, RuleEngine.evaluate(RuleConfig(), msg(category = Category.PERSONAL).copy(cover = true)).alert)
+        org.junit.Assert.assertEquals(RuleId.ONE_TIME_CODE, RuleEngine.evaluate(RuleConfig(), msg("Your login code is 482913").copy(cover = true)).decidedBy)
+    }
+
+    @Test
+    fun `extracts the code nearest the keyword`() {
+        org.junit.Assert.assertEquals("482913", OneTimeCodes.extract("Order 1234 shipped. Your verification code: 482913"))
+        org.junit.Assert.assertEquals("5521", OneTimeCodes.extract("5521 is your sign-in PIN"))
+        org.junit.Assert.assertNull(OneTimeCodes.extract("See you at 1930"))
+    }
+}
