@@ -108,6 +108,7 @@ class MainActivity : SimpleActivity() {
 
     override fun onResume() {
         super.onResume()
+        com.sovereignops.sms.SovereignNotifications.clearHeld(this) // Sovereign SMS
         updateMenuColors()
         refreshMenuItems()
 

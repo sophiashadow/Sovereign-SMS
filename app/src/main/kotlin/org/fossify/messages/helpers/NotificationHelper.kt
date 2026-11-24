@@ -26,6 +26,7 @@ import org.fossify.messages.messaging.isShortCodeWithLetters
 import org.fossify.messages.receivers.DeleteSmsReceiver
 import org.fossify.messages.receivers.DirectReplyReceiver
 import org.fossify.messages.receivers.MarkAsReadReceiver
+import com.sovereignops.sms.SovereignNotifications
 
 class NotificationHelper(private val context: Context) {
 
@@ -44,13 +45,18 @@ class NotificationHelper(private val context: Context) {
         threadId: Long,
         bitmap: Bitmap?,
         sender: String?,
-        alertOnlyOnce: Boolean = false
+        alertOnlyOnce: Boolean = false,
+        // Sovereign SMS: post on the low-importance quiet channel (rules engine SILENT).
+        quiet: Boolean = false
     ) {
         val hasCustomNotifications =
             context.config.customNotifications.contains(threadId.toString())
-        val notificationChannelId =
-            if (hasCustomNotifications) threadId.toString() else NOTIFICATION_CHANNEL_ID
-        if (!hasCustomNotifications) {
+        val notificationChannelId = when {
+            quiet -> SovereignNotifications.quietChannel(context)
+            hasCustomNotifications -> threadId.toString()
+            else -> NOTIFICATION_CHANNEL_ID
+        }
+        if (!hasCustomNotifications && !quiet) {
             createChannel(notificationChannelId, context.getString(R.string.channel_received_sms))
         }
 
@@ -145,12 +151,12 @@ class NotificationHelper(private val context: Context) {
             color = context.getProperPrimaryColor()
             setSmallIcon(R.drawable.ic_messenger)
             setContentIntent(contentPendingIntent)
-            priority = NotificationCompat.PRIORITY_MAX
+            priority = if (quiet) NotificationCompat.PRIORITY_LOW else NotificationCompat.PRIORITY_MAX
             setDefaults(Notification.DEFAULT_LIGHTS)
             setCategory(Notification.CATEGORY_MESSAGE)
             setAutoCancel(true)
             setOnlyAlertOnce(alertOnlyOnce)
-            setSound(soundUri, AudioManager.STREAM_NOTIFICATION)
+            if (quiet) setSilent(true) else setSound(soundUri, AudioManager.STREAM_NOTIFICATION)
         }
 
         if (replyAction != null && context.config.lockScreenVisibilitySetting == LOCK_SCREEN_SENDER_MESSAGE) {

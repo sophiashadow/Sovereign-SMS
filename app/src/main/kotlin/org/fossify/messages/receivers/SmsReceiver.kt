@@ -26,6 +26,8 @@ import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
 import org.fossify.messages.models.Message
+import com.sovereignops.sms.Sovereign
+import com.sovereignops.sms.core.screening.Disposition
 
 class SmsReceiver : BroadcastReceiver() {
 
@@ -45,14 +47,12 @@ class SmsReceiver : BroadcastReceiver() {
                 val status = parts.last().status
                 val body = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
 
-                if (isMessageFilteredOut(appContext, body)) return@ensureBackgroundThread
-                if (appContext.isNumberBlocked(address)) return@ensureBackgroundThread
-                if (appContext.baseConfig.blockUnknownNumbers) {
-                    val privateCursor =
-                        appContext.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-                    val result = SimpleContactsHelper(appContext).existsSync(address, privateCursor)
-                    if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
-                }
+                // Sovereign SMS: upstream returned here for blocked numbers/keywords/unknown
+                // senders, so the message was never stored. Screened messages are now kept
+                // (read, archived, no notification) unless the user turned that off.
+                val disposition = Sovereign.screen(appContext, address, body)
+                if (disposition is Disposition.Discard) return@ensureBackgroundThread
+                val screened = disposition is Disposition.Screen
 
                 val date = System.currentTimeMillis()
                 val threadId = appContext.getThreadId(address)
@@ -66,7 +66,8 @@ class SmsReceiver : BroadcastReceiver() {
                     date = date,
                     threadId = threadId,
                     subscriptionId = subscriptionId,
-                    status = status
+                    status = status,
+                    screened = screened
                 )
             } finally {
                 pending.finish()
@@ -84,7 +85,8 @@ class SmsReceiver : BroadcastReceiver() {
         threadId: Long,
         type: Int = Telephony.Sms.MESSAGE_TYPE_INBOX,
         subscriptionId: Int,
-        status: Int
+        status: Int,
+        screened: Boolean = false
     ) {
         val photoUri = SimpleContactsHelper(context).getPhotoUriFromPhoneNumber(address)
         val bitmap = context.getNotificationBitmap(photoUri)
@@ -94,7 +96,7 @@ class SmsReceiver : BroadcastReceiver() {
             subject = subject,
             body = body,
             date = date,
-            read = read,
+            read = if (screened) 1 else read,
             threadId = threadId,
             type = type,
             subscriptionId = subscriptionId
@@ -125,7 +127,7 @@ class SmsReceiver : BroadcastReceiver() {
             status = status,
             participants = arrayListOf(participant),
             date = (date / 1000).toInt(),
-            read = false,
+            read = screened,
             threadId = threadId,
             isMMS = false,
             attachment = null,
@@ -136,6 +138,13 @@ class SmsReceiver : BroadcastReceiver() {
         )
 
         context.messagesDB.insertOrUpdate(message)
+
+        if (screened) {
+            Sovereign.fileScreened(context, threadId)
+            refreshMessages()
+            refreshConversations()
+            return
+        }
 
         if (context.shouldUnarchive()) {
             context.updateConversationArchivedStatus(threadId, false)

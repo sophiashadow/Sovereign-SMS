@@ -30,7 +30,11 @@ app-build-javaVersion = "VERSION_17"
 app-build-kotlinJVMTarget = "17"
 #Helpers
 ez-vcard = "0.12.2"
+#Testing (Sovereign SMS)
+junit = "4.13.2"
 [libraries]
+#Testing (Sovereign SMS)
+junit = { module = "junit:junit", version.ref = "junit" }
 #AndroidX
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidx-constraintlayout" }
 androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidx-lifecycleprocess" }

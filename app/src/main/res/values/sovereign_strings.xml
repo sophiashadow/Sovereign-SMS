@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sovereign SMS strings (English only for now; not part of upstream translations). -->
+<resources>
+    <string name="sovereign_channel_quiet">Quiet messages</string>
+    <string name="sovereign_channel_held">Held messages summary</string>
+    <string name="sovereign_held_title">Messages held</string>
+    <plurals name="sovereign_held_messages">
+        <item quantity="one">%d message arrived during focus or quiet hours</item>
+        <item quantity="other">%d messages arrived during focus or quiet hours</item>
+    </plurals>
+</resources>

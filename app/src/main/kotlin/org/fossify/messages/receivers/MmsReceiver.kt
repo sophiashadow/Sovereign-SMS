@@ -24,10 +24,17 @@ import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
 import org.fossify.messages.models.Message
+import org.fossify.messages.extensions.markMessageRead
+import com.sovereignops.sms.Sovereign
+import com.sovereignops.sms.core.screening.Disposition
 
 class MmsReceiver : MmsReceivedReceiver() {
 
+    // Sovereign SMS: while screened messages are preserved, report nothing as blocked so
+    // mmslib persists the MMS instead of deleting it; screening is applied after storage
+    // in handleMmsMessage. With preservation off, upstream behaviour (delete) is unchanged.
     override fun isAddressBlocked(context: Context, address: String): Boolean {
+        if (Sovereign.store(context).preserveScreened) return false
         if (context.isNumberBlocked(address)) return true
         if (context.baseConfig.blockUnknownNumbers) {
             val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
@@ -39,6 +46,7 @@ class MmsReceiver : MmsReceivedReceiver() {
     }
 
     override fun isContentBlocked(context: Context, content: String): Boolean {
+        if (Sovereign.store(context).preserveScreened) return false
         return isMessageFilteredOut(context, content)
     }
 
@@ -66,6 +74,17 @@ class MmsReceiver : MmsReceivedReceiver() {
         size: Int,
         address: String
     ) {
+        val disposition = Sovereign.screen(context, address, mms.body)
+        if (disposition is Disposition.Discard) return // mmslib already deleted it (preservation off)
+        if (disposition is Disposition.Screen) {
+            context.markMessageRead(mms.id, isMMS = true)
+            context.getConversations(mms.threadId).firstOrNull()?.let { runCatching { context.insertOrUpdateConversation(it) } }
+            Sovereign.fileScreened(context, mms.threadId)
+            refreshMessages()
+            refreshConversations()
+            return
+        }
+
         val glideBitmap = try {
             Glide.with(context)
                 .asBitmap()

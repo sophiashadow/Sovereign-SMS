@@ -1068,16 +1068,20 @@ fun Context.showReceivedMessageNotification(
     threadId: Long,
     bitmap: Bitmap?,
 ) {
-    Handler(Looper.getMainLooper()).post {
-        notificationHelper.showMessageNotification(
-            messageId = messageId,
-            isMms = isMms,
-            address = address,
-            body = body,
-            threadId = threadId,
-            bitmap = bitmap,
-            sender = senderName
-        )
+    // Sovereign SMS: notification rules decide alert / quiet / held. Storage is unaffected.
+    com.sovereignops.sms.Sovereign.announce(this, threadId, address, body) { quiet ->
+        Handler(Looper.getMainLooper()).post {
+            notificationHelper.showMessageNotification(
+                messageId = messageId,
+                isMms = isMms,
+                address = address,
+                body = body,
+                threadId = threadId,
+                bitmap = bitmap,
+                sender = senderName,
+                quiet = quiet
+            )
+        }
     }
 }
 
