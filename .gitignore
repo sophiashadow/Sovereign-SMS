@@ -11,3 +11,12 @@ keystore.properties
 fastlane/fastlane.json
 fastlane/report.xml
 .kotlin/
+
+# Sovereign SMS: release outputs and signing material never belong in Git
+/dist/
+*.jks
+*.keystore
+*.p12
+*.pk8
+*.pem
+signing.env

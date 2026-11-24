@@ -74,13 +74,60 @@ class SovereignSettingsActivity : SimpleActivity() {
     private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
         val text = runCatching { contentResolver.openInputStream(uri)!!.use { it.readAtMost(com.sovereignops.sms.core.io.Limits.SETTINGS_PACK).toString(Charsets.UTF_8) } }
-        val error = text.fold({ store.importPack(it) }, { if (it is com.sovereignops.sms.core.io.TooLarge) it.message else "unreadable file" })
-        if (error == null) {
-            toast(R.string.sv_imported)
-            load()
-        } else {
-            toast(getString(R.string.sv_import_failed, error))
+        text.fold(
+            { confirmImport(it) },
+            { toast(getString(R.string.sv_import_failed, if (it is com.sovereignops.sms.core.io.TooLarge) it.message else "unreadable file")) },
+        )
+    }
+
+    /**
+     * A pack replaces each section it contains. Says which before anything changes, and keeps the
+     * previous settings so the import can be undone straight away.
+     */
+    private fun confirmImport(text: String) {
+        val pack = com.sovereignops.sms.core.pack.PackCodec.decode(text).getOrElse {
+            toast(getString(R.string.sv_import_failed, it.message ?: "invalid file"))
+            return
         }
+        val names = com.sovereignops.sms.core.pack.PackCodec.sections(pack).map {
+            getString(
+                when (it) {
+                    com.sovereignops.sms.core.pack.PackCodec.Section.RULES -> R.string.sv_pack_part_rules
+                    com.sovereignops.sms.core.pack.PackCodec.Section.GUARD -> R.string.sv_pack_part_guard
+                    com.sovereignops.sms.core.pack.PackCodec.Section.TEMPLATES -> R.string.sv_pack_part_templates
+                    com.sovereignops.sms.core.pack.PackCodec.Section.FLAGS -> R.string.sv_pack_part_flags
+                },
+            )
+        }
+        if (names.isEmpty()) {
+            toast(getString(R.string.sv_import_failed, getString(R.string.sv_import_empty)))
+            return
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.sv_import_title)
+            .setMessage(getString(R.string.sv_import_replace, names.joinToString(", ")))
+            .setPositiveButton(R.string.sv_import_confirm) { _, _ ->
+                val before = store.exportPack()
+                val error = store.importPack(text)
+                SovereignFlags.invalidate()
+                load()
+                if (error != null) {
+                    toast(getString(R.string.sv_import_failed, error))
+                    return@setPositiveButton
+                }
+                com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                    .setMessage(R.string.sv_imported)
+                    .setPositiveButton(android.R.string.ok, null)
+                    .setNegativeButton(R.string.sv_import_undo) { _, _ ->
+                        store.importPack(before)
+                        SovereignFlags.invalidate()
+                        load()
+                        toast(R.string.sv_import_undone)
+                    }
+                    .show()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private val dayBoxes: List<Pair<DayOfWeek, CheckBox>> by lazy {

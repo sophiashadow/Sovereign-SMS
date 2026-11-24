@@ -72,6 +72,16 @@ object PackCodec {
     const val FORMAT = "sovereign-sms/pack"
     const val VERSION = 1
 
+    enum class Section { RULES, GUARD, TEMPLATES, FLAGS }
+
+    /** The sections an import of [p] replaces, in file order; every other section is left as it is. */
+    fun sections(p: Pack): List<Section> = listOfNotNull(
+        Section.RULES.takeIf { p.rules != null },
+        Section.GUARD.takeIf { p.guard != null },
+        Section.TEMPLATES.takeIf { p.templates != null },
+        Section.FLAGS.takeIf { p.flags != null },
+    )
+
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; prettyPrint = true; explicitNulls = false }
 
     private fun PatternDoc.toPattern() = Pattern(text, if (regex) MatchKind.REGEX else MatchKind.KEYWORD)

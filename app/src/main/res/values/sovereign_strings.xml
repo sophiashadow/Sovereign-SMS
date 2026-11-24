@@ -300,4 +300,15 @@
     <string name="sv_unencrypted_zip">This ZIP holds the conversation\'s full text, numbers, dates and attachments, unencrypted. Any person or app that can open the place you save it can read it. The encrypted backup (.sovbak) does not include messages.</string>
     <string name="sv_unencrypted_pack">The settings pack is plain, unencrypted JSON: your rules, draft-guard patterns, templates and flags. It holds no messages, cards, quarantine list or ledger.</string>
     <string name="sv_unencrypted_ledger">Ledger exports are plain, unencrypted files with your figures and notes. Any person or app that can open the place you save them can read them.</string>
+    <string name="sv_unencrypted_messages">The message export is plain, unencrypted JSON with the text, numbers and dates of the messages you choose. Any person or app that can open the place you save it can read it.</string>
+    <string name="sv_import_title">Import settings pack</string>
+    <string name="sv_import_replace">This file replaces your current %s. Everything else is kept. You can undo straight after.</string>
+    <string name="sv_import_confirm">Replace</string>
+    <string name="sv_import_undo">Undo import</string>
+    <string name="sv_import_undone">Previous settings restored</string>
+    <string name="sv_import_empty">the file has no rules, guard, templates or flags</string>
+    <string name="sv_pack_part_rules">notification rules</string>
+    <string name="sv_pack_part_guard">draft-guard rules</string>
+    <string name="sv_pack_part_templates">templates</string>
+    <string name="sv_pack_part_flags">incoming flag rules</string>
 </resources>

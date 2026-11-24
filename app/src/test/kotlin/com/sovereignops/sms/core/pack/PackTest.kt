@@ -31,6 +31,18 @@ class PackTest {
     }
 
     @Test
+    fun `import names exactly the sections it replaces, and a full export undoes it`() {
+        val partial = PackCodec.decode("""{"format":"sovereign-sms/pack","version":1,"templates":[{"title":"T","body":"B"}]}""").getOrThrow()
+        assertEquals(listOf(PackCodec.Section.TEMPLATES), PackCodec.sections(partial))
+        // The undo snapshot is a full export: every section present, even an empty one, so undo restores all four.
+        val before = Pack(RuleConfig(cooldownMinutes = 15), emptyList(), listOf(Template("Mine", "Kept")), emptyList())
+        val snapshot = PackCodec.decode(PackCodec.encode(before)).getOrThrow()
+        assertEquals(PackCodec.Section.entries, PackCodec.sections(snapshot))
+        assertEquals(before, snapshot)
+        assertEquals(emptyList<PackCodec.Section>(), PackCodec.sections(Pack()))
+    }
+
+    @Test
     fun `plain rules file imports as a pack`() {
         val p = PackCodec.decode(RuleConfigCodec.encode(RuleConfig(cooldownMinutes = 5))).getOrThrow()
         assertEquals(5, p.rules!!.cooldownMinutes)

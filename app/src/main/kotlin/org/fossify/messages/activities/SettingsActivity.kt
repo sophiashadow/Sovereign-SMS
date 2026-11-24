@@ -144,8 +144,11 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupMessagesExport() {
         binding.settingsExportMessagesHolder.setOnClickListener {
-            exportMessagesDialog = ExportMessagesDialog(this) { fileName ->
-                saveDocument.launch("$fileName.json")
+            // Sovereign SMS: the message export is plain JSON of every message; warn first (never blocks).
+            com.sovereignops.sms.ui.Unencrypted.confirm(this, R.string.sv_unencrypted_messages) {
+                exportMessagesDialog = ExportMessagesDialog(this) { fileName ->
+                    saveDocument.launch("$fileName.json")
+                }
             }
         }
     }
