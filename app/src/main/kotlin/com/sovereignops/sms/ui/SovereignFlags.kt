@@ -92,7 +92,7 @@ object SovereignFlags {
             .setItems(labels) { _, which ->
                 when (which) {
                     0 -> quarantine(activity, message, refresh)
-                    1 -> deflect(activity)
+                    1 -> deflect(activity, message.threadId)
                     2 -> ensureBackgroundThread {
                         val k = key(message)
                         hits.forEach { VaultCache.dismiss(activity, k, it.rule.name) }
@@ -117,8 +117,8 @@ object SovereignFlags {
         }
     }
 
-    private fun deflect(activity: SimpleActivity) {
+    private fun deflect(activity: SimpleActivity, threadId: Long) {
         val input = composer?.get() ?: return
-        SovereignComposer.pickTemplate(activity, input, preferDeflection = true)
+        SovereignComposer.pickTemplate(activity, input, preferDeflection = true, threadId = threadId)
     }
 }

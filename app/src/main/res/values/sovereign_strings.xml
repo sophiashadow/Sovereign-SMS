@@ -99,6 +99,26 @@
     <string name="sv_channel_priority">Priority / Regular</string>
     <string name="sv_channel_otp">Codes and verification</string>
     <string name="sv_insert_template">Insert template</string>
+    <string name="sv_insert">Insert</string>
+    <string name="sv_favorite_chip">★ %s</string>
+    <string name="sv_queue">Availability queue</string>
+    <string name="sv_queue_pick_template">Choose a template…</string>
+    <string name="sv_queue_template">Template: %s (tap to change)</string>
+    <string name="sv_queue_skip">Skip</string>
+    <string name="sv_queue_edit">Edit</string>
+    <string name="sv_queue_send">Send</string>
+    <string name="sv_queue_progress">%1$d of %2$d</string>
+    <string name="sv_queue_no_alias">(no alias)</string>
+    <string name="sv_queue_last">Last contact: %s</string>
+    <string name="sv_queue_never">No contact recorded</string>
+    <string name="sv_queue_empty">No client card has availability opt-in on. Turn it on in a client card.</string>
+    <string name="sv_queue_done">Review finished. Sent: %d</string>
+    <string name="sv_queue_fill">Fill in the message (and any {placeholder}) before sending.</string>
+    <string name="sv_queue_confirm">Tap Send again to send anyway.</string>
+    <string name="sv_queue_no_address">This conversation has no address to send to.</string>
+    <string name="sv_ph_alias">Alias</string>
+    <string name="sv_ph_time_window">Time window</string>
+    <string name="sv_ph_date">Date</string>
     <string name="sv_no_templates">No templates yet. Add them in Settings → Sovereign SMS.</string>
     <string name="sv_category">Conversation side</string>
     <string name="sv_category_auto">Automatic (contacts are personal)</string>
@@ -110,7 +130,7 @@
     <string name="sv_guard_note">One per line, Name: keyword or Name: /regex/. Use A &amp;&amp; B to warn only when both appear. A match shows a warning above the composer; it never stops you sending.</string>
     <string name="sv_guard_hint">Protected: a word you never send</string>
     <string name="sv_section_templates">Templates</string>
-    <string name="sv_templates_note">Separate templates with a line holding only ---. First line is the title. Inserting a template only fills the composer.</string>
+    <string name="sv_templates_note">Separate templates with a line holding only ---. First line is the title; add \" | category=booking_confirm favorite\" to group it on the quick-reply bar (categories: initial_info, screening_gate, verification_request, deflection, booking_confirm, reconfirm, follow_up). {alias}, {time_window} and {date} are filled from the client card or asked for. Inserting a template only fills the composer; import and export travel in the rules pack.</string>
     <string name="sv_templates_hint">Title\nMessage text</string>
     <string name="sv_add_starters">Add starter set (off until you enable it)</string>
     <string name="sv_starters_added">Starter set added. Review and edit before relying on it.</string>

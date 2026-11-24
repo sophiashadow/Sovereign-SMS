@@ -62,7 +62,16 @@ class OwnerTemplateTest {
         assertEquals(2, p.flags!!.size)
         assertTrue(p.flags!!.none { it.enabled })
         assertEquals(setOf(com.sovereignops.sms.core.rules.Category.PROFESSIONAL, com.sovereignops.sms.core.rules.Category.UNKNOWN), p.rules!!.quietHoursCategories)
-        assertEquals(1, p.templates!!.size)
+        assertEquals(7, p.templates!!.size)
+        assertEquals(com.sovereignops.sms.core.templates.TemplateCategory.entries.toSet(), p.templates!!.mapNotNull { it.category }.toSet())
+        assertEquals(2, p.templates!!.count { it.favorite })
+    }
+
+    @Test
+    fun `template category and favorite round trip, unknown category rejects the file`() {
+        val t = listOf(Template("C", "Confirmed {date}", com.sovereignops.sms.core.templates.TemplateCategory.BOOKING_CONFIRM, favorite = true))
+        assertEquals(t, PackCodec.decode(PackCodec.encode(Pack(templates = t))).getOrThrow().templates)
+        assertTrue(PackCodec.decode("""{"format":"sovereign-sms/pack","version":1,"templates":[{"title":"T","body":"B","category":"nope"}]}""").isFailure)
     }
 }
 

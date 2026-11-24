@@ -2,7 +2,20 @@ package com.sovereignops.sms.ui
 
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
+import androidx.core.view.isNotEmpty
 import android.widget.EditText
+import android.widget.LinearLayout
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.sovereignops.sms.core.templates.Placeholders
+import com.sovereignops.sms.core.templates.Template
+import com.sovereignops.sms.core.templates.TemplateCategory
+import com.sovereignops.sms.vault.VaultCache
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import android.widget.TextView
 import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.core.guard.DraftGuard
@@ -71,20 +84,92 @@ object SovereignComposer {
         return false
     }
 
-    fun pickTemplate(activity: SimpleActivity, input: EditText, preferDeflection: Boolean = false) {
+    fun pickTemplate(activity: SimpleActivity, input: EditText, preferDeflection: Boolean = false, threadId: Long? = null) {
         val all = Sovereign.store(activity).templates
-        val templates = if (!preferDeflection) all else all.sortedByDescending { t -> DEFLECT.containsMatchIn(t.title) }
+        val templates = if (!preferDeflection) all else all.sortedByDescending { t -> t.category == TemplateCategory.DEFLECTION || DEFLECT.containsMatchIn(t.title) }
+        choose(activity, input, templates, R.string.sv_insert_template, threadId)
+    }
+
+    private fun choose(activity: SimpleActivity, input: EditText, templates: List<Template>, title: Int, threadId: Long?) {
         if (templates.isEmpty()) {
             activity.toast(R.string.sv_no_templates)
             return
         }
         val items = ArrayList(templates.mapIndexed { i, t -> RadioItem(i, t.title, i) })
-        RadioGroupDialog(activity, items, -1, R.string.sv_insert_template) { i ->
-            val (text, cursor) = Templates.insert(input.text.toString(), input.selectionStart, input.selectionEnd, templates[i as Int].body)
-            input.setText(text)
-            input.setSelection(cursor.coerceAtMost(text.length))
-            input.requestFocus()
+        RadioGroupDialog(activity, items, -1, title) { i -> insertTemplate(activity, input, templates[i as Int], threadId) }
+    }
+
+    /** Values the client card can supply for placeholders. */
+    fun cardValues(threadId: Long?): Map<String, String?> {
+        val card = threadId?.let(VaultCache::card)
+        return mapOf("alias" to card?.alias, "time_window" to card?.timeWindow, "date" to null)
+    }
+
+    /**
+     * Fill placeholders from the card, ask for the rest, then insert at the cursor.
+     * Never sends; the draft guard checks the result like typed text.
+     */
+    fun insertTemplate(activity: SimpleActivity, input: EditText, template: Template, threadId: Long?) {
+        val values = cardValues(threadId)
+        val missing = Placeholders.missing(template.body, values)
+        if (missing.isEmpty()) {
+            put(input, Placeholders.fill(template.body, values))
+            return
         }
+        val fields = missing.associateWith { name ->
+            EditText(activity).apply {
+                hint = activity.getString(placeholderLabel(name))
+                if (name == "date") setText(LocalDate.now().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
+            }
+        }
+        val pad = activity.resources.getDimensionPixelSize(org.fossify.commons.R.dimen.activity_margin)
+        val form = LinearLayout(activity).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(pad, pad / 2, pad, 0)
+            fields.values.forEach(::addView)
+        }
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(template.title)
+            .setView(form)
+            .setPositiveButton(R.string.sv_insert) { _, _ ->
+                val filled = values + fields.mapValues { it.value.text.toString().trim() }
+                put(input, Placeholders.fill(template.body, filled))
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun placeholderLabel(name: String) = when (name) {
+        "alias" -> R.string.sv_ph_alias
+        "time_window" -> R.string.sv_ph_time_window
+        else -> R.string.sv_ph_date
+    }
+
+    private fun put(input: EditText, body: String) {
+        val (text, cursor) = Templates.insert(input.text.toString(), input.selectionStart, input.selectionEnd, body)
+        input.setText(text)
+        input.setSelection(cursor.coerceAtMost(text.length))
+        input.requestFocus()
+    }
+
+    /** Favorite chips insert directly; category chips open that category's list. Hidden with no templates. */
+    fun attachQuickBar(activity: SimpleActivity, scroll: View, bar: ChipGroup, input: EditText, threadId: Long) {
+        bar.removeAllViews()
+        val templates = Sovereign.store(activity).templates
+        val (favorites, categories) = Templates.bar(templates)
+        favorites.forEach { t ->
+            bar.addView(Chip(activity).apply {
+                text = activity.getString(R.string.sv_favorite_chip, t.title)
+                setOnClickListener { insertTemplate(activity, input, t, threadId) }
+            })
+        }
+        categories.forEach { c ->
+            bar.addView(Chip(activity).apply {
+                text = c.label
+                setOnClickListener { choose(activity, input, templates.filter { it.category == c }, R.string.sv_insert_template, threadId) }
+            })
+        }
+        scroll.beVisibleIf(bar.isNotEmpty())
     }
 
     fun pickCategory(activity: SimpleActivity, threadId: Long) {

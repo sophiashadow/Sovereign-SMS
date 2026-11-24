@@ -42,6 +42,12 @@
     { "name": "Asks for a received code", "pattern": { "text": "\\b(send|give|forward)( me)? (the|your) (code|otp)\\b", "regex": true }, "severity": "HIGH_RISK", "silent": false, "enabled": false }
   ],
   "templates": [
-    { "title": "Info request", "body": "Thanks for reaching out. To check availability, please send your name, the time you'd like, how long, and the general area." }
+    { "title": "Info request", "category": "initial_info", "favorite": true, "body": "Thanks for reaching out. To check availability, please send your name, the time you'd like, how long, and the general area." },
+    { "title": "Screening first", "category": "screening_gate", "body": "Before we set anything up I need to complete screening. Details are REPLACE_WITH_YOUR_PROCESS." },
+    { "title": "Verification", "category": "verification_request", "body": "Thanks, {alias}. Please send the verification we discussed when you can." },
+    { "title": "Not available", "category": "deflection", "favorite": true, "body": "Thanks for asking. I'm not available for that." },
+    { "title": "Confirm", "category": "booking_confirm", "body": "Confirmed, {alias}: {date}, {time_window}." },
+    { "title": "Reconfirm", "category": "reconfirm", "body": "Checking we're still on for {date}, {time_window}. Reply yes to confirm." },
+    { "title": "Follow-up", "category": "follow_up", "body": "Hi {alias}, I have some openings coming up if you'd like to set something up." }
   ]
 }

@@ -10,6 +10,10 @@
         android:title="@string/sv_cover"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/sv_queue"
+        android:title="@string/sv_queue"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/show_recycle_bin"
         android:showAsAction="never"
         android:title="@string/show_the_recycle_bin"

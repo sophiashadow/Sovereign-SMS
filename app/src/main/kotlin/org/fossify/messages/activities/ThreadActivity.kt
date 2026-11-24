@@ -398,7 +398,7 @@ class ThreadActivity : SimpleActivity() {
             R.id.unarchive -> unarchiveConversation()
             R.id.rename_conversation -> renameConversation()
             R.id.sovereign_card -> sovereignOpenCard() // Sovereign SMS
-            R.id.sovereign_insert_template -> com.sovereignops.sms.ui.SovereignComposer.pickTemplate(this, binding.messageHolder.threadTypeMessage) // Sovereign SMS
+            R.id.sovereign_insert_template -> com.sovereignops.sms.ui.SovereignComposer.pickTemplate(this, binding.messageHolder.threadTypeMessage, threadId = threadId) // Sovereign SMS
             R.id.sovereign_category -> com.sovereignops.sms.ui.SovereignComposer.pickCategory(this, threadId) // Sovereign SMS
             R.id.sovereign_policy -> com.sovereignops.sms.ui.SovereignSettingsActivity.pickPolicy(this, threadId) // Sovereign SMS
             R.id.conversation_details -> launchConversationDetails(threadId)
@@ -899,6 +899,7 @@ class ThreadActivity : SimpleActivity() {
             threadSendMessage.isClickable = false
             com.sovereignops.sms.ui.SovereignComposer.attachGuard(this@ThreadActivity, threadTypeMessage, binding.sovereignGuardBanner) { com.sovereignops.sms.ui.SovereignThread.guardContext(threadId, messages) } // Sovereign SMS
             com.sovereignops.sms.ui.SovereignFlags.composer = java.lang.ref.WeakReference(threadTypeMessage) // Sovereign SMS
+            com.sovereignops.sms.ui.SovereignComposer.attachQuickBar(this@ThreadActivity, binding.svQuickScroll, binding.svQuickBar, threadTypeMessage, threadId) // Sovereign SMS
             threadTypeMessage.onTextChangeListener {
                 messageToResend = null
                 checkSendMessageAvailability()

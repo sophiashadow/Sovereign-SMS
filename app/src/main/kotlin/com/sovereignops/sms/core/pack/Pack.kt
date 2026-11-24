@@ -9,6 +9,7 @@ import com.sovereignops.sms.core.rules.Category
 import com.sovereignops.sms.core.rules.RuleConfig
 import com.sovereignops.sms.core.rules.RuleConfigCodec
 import com.sovereignops.sms.core.templates.Template
+import com.sovereignops.sms.core.templates.TemplateCategory
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -49,7 +50,13 @@ internal data class GuardDoc(
 )
 
 @Serializable
-internal data class TemplateDoc(val title: String, val body: String)
+internal data class TemplateDoc(
+    val title: String,
+    val body: String,
+    /** One of TemplateCategory keys, e.g. `booking_confirm`. Optional. */
+    val category: String? = null,
+    val favorite: Boolean = false,
+)
 
 @Serializable
 internal data class PackDoc(
@@ -96,7 +103,7 @@ object PackCodec {
         PackDoc(
             rules = pack.rules?.let { json.parseToJsonElement(RuleConfigCodec.encode(it)) },
             guard = pack.guard?.map { it.toDoc() },
-            templates = pack.templates?.map { TemplateDoc(it.title, it.body) },
+            templates = pack.templates?.map { TemplateDoc(it.title, it.body, it.category?.key, it.favorite) },
             flags = pack.flags?.map { it.toDoc() },
         ),
     )
@@ -113,7 +120,13 @@ object PackCodec {
                     rules = doc.rules?.let { RuleConfigCodec.decode(it.toString()).getOrThrow() },
                     guard = doc.guard?.let(::rules),
                     flags = doc.flags?.let(::rules),
-                    templates = doc.templates?.map { Template(it.title.trim(), it.body) }?.filter { it.title.isNotEmpty() && it.body.isNotBlank() },
+                    templates = doc.templates?.map { d ->
+                        Template(
+                            d.title.trim(), d.body,
+                            d.category?.let { c -> TemplateCategory.parse(c) ?: error("Unknown template category “$c” in “${d.title}”") },
+                            d.favorite,
+                        )
+                    }?.filter { it.title.isNotEmpty() && it.body.isNotBlank() },
                 )
             }
             else -> error("Not a Sovereign SMS rules or pack file")

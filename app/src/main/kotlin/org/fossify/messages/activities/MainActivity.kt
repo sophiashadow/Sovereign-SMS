@@ -184,6 +184,7 @@ class MainActivity : SimpleActivity() {
                 R.id.show_recycle_bin -> launchRecycleBin()
                 R.id.show_archived -> launchArchivedConversations()
                 R.id.sv_quick_cover -> com.sovereignops.sms.ui.SovereignInbox.toggleCover(this, binding.svModeGroup) { setupConversations(sovereignAll) } // Sovereign SMS
+                R.id.sv_queue -> startActivity(Intent(this, com.sovereignops.sms.ui.SovereignQueueActivity::class.java)) // Sovereign SMS
                 R.id.settings -> launchSettings()
                 R.id.about -> launchAbout()
                 else -> return@setOnMenuItemClickListener false

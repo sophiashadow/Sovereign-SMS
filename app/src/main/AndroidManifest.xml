@@ -106,6 +106,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Sovereign SMS availability review; not exported. Sends only on a tap. -->
+        <activity
+            android:name="com.sovereignops.sms.ui.SovereignQueueActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/sv_queue"
+            android:parentActivityName=".activities.MainActivity" />
+
         <!-- Sovereign SMS rules screen; not exported. -->
         <activity
             android:name="com.sovereignops.sms.ui.SovereignSettingsActivity"

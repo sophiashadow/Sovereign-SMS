@@ -168,10 +168,31 @@
             android:textColor="#000000"
             android:textSize="@dimen/smaller_text_size"
             android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@id/message_holder"
+            app:layout_constraintBottom_toTopOf="@id/sv_quick_scroll"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/short_code_holder" />
+
+        <!-- Sovereign SMS: quick-reply bar. A chip only inserts text; it never sends. -->
+        <HorizontalScrollView
+            android:id="@+id/sv_quick_scroll"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="@dimen/small_margin"
+            android:scrollbars="none"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/message_holder"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/sovereign_guard_banner">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/sv_quick_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="@dimen/small_margin"
+                app:singleLine="true" />
+        </HorizontalScrollView>
 
         <include
             android:id="@+id/message_holder"

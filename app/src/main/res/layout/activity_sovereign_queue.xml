@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sovereign SMS: availability queue review. One card at a time; every send is a tap. -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <org.fossify.commons.views.MyAppBarLayout
+        android:id="@+id/sq_appbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/sq_toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/color_primary"
+            app:title="@string/sv_queue"
+            app:titleTextAppearance="@style/AppTheme.ActionBar.TitleTextStyle" />
+
+    </org.fossify.commons.views.MyAppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/sq_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:id="@+id/sq_holder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/activity_margin">
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/sq_progress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/smaller_text_size" />
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/sq_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="@dimen/small_margin"
+                android:textSize="@dimen/big_text_size"
+                android:textStyle="bold" />
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/sq_last"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/sq_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/small_margin"
+                android:background="#FFB300"
+                android:padding="@dimen/small_margin"
+                android:textColor="#000000"
+                android:visibility="gone" />
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/sq_template"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="@dimen/activity_margin"
+                android:text="@string/sv_queue_pick_template" />
+
+            <org.fossify.commons.views.MyEditText
+                android:id="@+id/sq_message"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:gravity="top"
+                android:inputType="textMultiLine|textCapSentences"
+                android:minLines="3" />
+
+            <TextView
+                android:id="@+id/sq_guard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFB300"
+                android:padding="@dimen/small_margin"
+                android:textColor="#000000"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:paddingTop="@dimen/activity_margin">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sq_skip"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sv_queue_skip" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sq_edit"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sv_queue_edit" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sq_send"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sv_queue_send" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

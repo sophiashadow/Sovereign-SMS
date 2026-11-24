@@ -37,6 +37,11 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | B | Per-conversation category (Automatic / Personal / Professional / Unknown) | compiled; resolution tested |
 | B | Tags, notes, pins | not started (upstream has pins) |
 | C | Daily summaries, "why did this alert" log | not started (the preview gives explanations) |
+| D | Template categories (Initial Info, Screening Gate, Verification Request, Deflection / Decline, Booking Confirm, Reconfirm, Follow-Up) and favorites; text form `Title \| category=x favorite`; pack fields `category`, `favorite` (unknown category rejects the file) | tested (QuickReplyTest 4, PackTest 2) |
+| D | Quick-reply chip bar above the composer: favorites insert directly, category chips open that list; hidden with no templates. Inserting never sends; the draft guard and confirm-send gate check the result like typed text | compiled |
+| D | Placeholders `{alias}`, `{time_window}` from the client card; `{date}` and anything missing asked for (date prefilled with today); other braces untouched | tested |
+| D | Template CRUD in Settings (text editor); import/export through the existing rules pack (SAF) | tested (codec); UI compiled |
+| D | Availability queue (main menu): opt-in cards only, longest-uncontacted first, cooldown hits (7 days / 4 in 30 days) flagged and sorted last; one card at a time with Send / Skip / Edit; a cooldown or guard warning needs a second tap; Send calls upstream `sendMessageCompat` only on that tap, then records the ping and last contact | ordering and recording tested (AvailabilityQueueTest 4); review screen compiled; **no message has been sent from it** |
 | A | Vault: Room + SQLCipher 4.20.0, random 32-byte key wrapped by a Keystore AES-GCM key; an unreadable vault is set aside (renamed, never deleted) and a notice shown | compiled; 16 KB ELF alignment and `zipalign -P 16` verified on the APK |
 | A | Client card (header tap / menu): local alias (never written to Contacts), screening stage, renamable checklist (`#off`, "Deposit / Terms confirmed" off by default), rate tier, time window, availability opt-in, encrypted notes, derived first/last/count | compiled; model tested (CrmTest) |
 | A | Inbox stage dot + alias; alias in notifications (switchable); alias/stage makes a sender known | compiled; resolution tested |
@@ -51,4 +56,4 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | G | Workload insights | not started |
 | — | Signed release build | not done (no signing key; needs owner authorisation) |
 
-Test command: `./gradlew testFossDebugUnitTest`. The last run before Slice C (Slice B) had 83 tests with 0 failures and 0 errors.
+Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice D) had 99 tests with 0 failures and 0 errors.
