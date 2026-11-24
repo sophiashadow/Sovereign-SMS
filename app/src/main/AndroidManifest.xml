@@ -114,6 +114,19 @@
             android:label="@string/sv_queue"
             android:parentActivityName=".activities.MainActivity" />
 
+        <!-- Sovereign SMS ledger; not exported. Hand-entered figures, encrypted vault only. -->
+        <activity
+            android:name="com.sovereignops.sms.ui.SovereignLedgerActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/sv_ledger"
+            android:parentActivityName="com.sovereignops.sms.ui.SovereignSettingsActivity" />
+
+        <!-- Sovereign SMS: silent "focus ends soon" notice from an inexact alarm; not exported. -->
+        <receiver
+            android:name="com.sovereignops.sms.FocusEndingReceiver"
+            android:exported="false" />
+
         <!-- Sovereign SMS rules screen; not exported. -->
         <activity
             android:name="com.sovereignops.sms.ui.SovereignSettingsActivity"

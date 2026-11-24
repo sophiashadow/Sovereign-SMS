@@ -23,6 +23,8 @@ import com.sovereignops.sms.core.rules.IncomingMessage
 import com.sovereignops.sms.core.rules.RuleConfig
 import com.sovereignops.sms.core.rules.RuleEngine
 import com.sovereignops.sms.core.rules.RuleText
+import com.sovereignops.sms.core.rules.FocusTimer
+import com.sovereignops.sms.core.rules.ScheduleText
 import com.sovereignops.sms.core.rules.TimeWindow
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.baseConfig
@@ -121,6 +123,8 @@ class SovereignSettingsActivity : SimpleActivity() {
         binding.svTemplates.setText(Templates.format(store.templates))
         binding.svChecklist.setText(Checklist.format(store.checklistItems))
         binding.svFlags.setText(GuardText.format(store.flagRules))
+        binding.svSchedules.setText(ScheduleText.format(c.schedules))
+        binding.svSchedulesInvalid.beVisibleIf(false)
         loading = false
         render()
     }
@@ -159,6 +163,8 @@ class SovereignSettingsActivity : SimpleActivity() {
         svGuardInvalid.text = getString(R.string.sv_guard_invalid, invalid.distinct().joinToString(", "))
         svGuardInvalid.beVisibleIf(invalid.isNotEmpty())
         svCodes.isChecked = c.alertOneTimeCodes
+        svTrace.text = getString(R.string.sv_trace_summary)
+        svLedger.text = getString(R.string.sv_ledger_summary)
         svCooldown.text = if (c.cooldownMinutes == 0) getString(R.string.sv_off) else getString(R.string.sv_minutes, c.cooldownMinutes)
         listOf(svQuietStartHolder, svQuietEndHolder, svDaysHolder).forEach { it.beVisibleIf(quietOn) }
         loading = false
@@ -225,14 +231,25 @@ class SovereignSettingsActivity : SimpleActivity() {
         svCodesHolder.setOnClickListener { svCodes.toggle(); edit { it.copy(alertOneTimeCodes = svCodes.isChecked) } }
 
         svFocusHolder.setOnClickListener {
-            val now = LocalDateTime.now()
-            val morning = now.toLocalDate().plusDays(if (now.toLocalTime() < LocalTime.of(8, 0)) 0 else 1).atTime(8, 0)
-            val options = listOf<LocalDateTime?>(null, now.plusHours(1), now.plusHours(3), morning)
-            val labels = listOf(R.string.sv_off, R.string.sv_focus_1h, R.string.sv_focus_3h, R.string.sv_focus_morning)
-            val items = ArrayList(labels.mapIndexed { i, l -> RadioItem(i, getString(l), i) })
-            RadioGroupDialog(this@SovereignSettingsActivity, items, -1, R.string.sv_focus) { i ->
-                edit { it.copy(focusUntil = options[i as Int]) }
+            val labels = listOf(getString(R.string.sv_off)) + FocusTimer.presetMinutes.map { resources.getQuantityString(R.plurals.sv_focus_minutes, it, it) } +
+                getString(R.string.sv_focus_custom)
+            val items = ArrayList(labels.mapIndexed { i, l -> RadioItem(i, l, i) })
+            RadioGroupDialog(this@SovereignSettingsActivity, items, -1, R.string.sv_focus) { picked ->
+                val i = picked as Int
+                fun set(until: LocalDateTime?) {
+                    edit { it.copy(focusUntil = until) }
+                    com.sovereignops.sms.SovereignFocus.sync(this@SovereignSettingsActivity)
+                }
+                when {
+                    i == 0 -> set(null)
+                    i <= FocusTimer.presetMinutes.size -> set(FocusTimer.until(LocalDateTime.now(), FocusTimer.presetMinutes[i - 1]))
+                    else -> pickTime(LocalTime.now().plusHours(1).withMinute(0)) { t -> set(FocusTimer.untilClock(LocalDateTime.now(), t)) }
+                }
             }
+        }
+        svTraceHolder.setOnClickListener { showTrace() }
+        svLedgerHolder.setOnClickListener {
+            startActivity(android.content.Intent(this@SovereignSettingsActivity, SovereignLedgerActivity::class.java))
         }
 
         svQuietEnabledHolder.setOnClickListener {
@@ -289,9 +306,14 @@ class SovereignSettingsActivity : SimpleActivity() {
     private fun saveText() {
         val priority = RuleText.parseAddresses(binding.svPriority.text.toString())
         val keywords = RuleText.parseKeywords(binding.svKeywords.text.toString())
+        val scheduleText = binding.svSchedules.text.toString()
+        val schedules = ScheduleText.parse(scheduleText)
+        val badSchedules = ScheduleText.invalid(scheduleText)
+        binding.svSchedulesInvalid.text = getString(R.string.sv_schedules_invalid, badSchedules.joinToString("; "))
+        binding.svSchedulesInvalid.beVisibleIf(badSchedules.isNotEmpty())
         val c = store.ruleConfig
-        if (priority != c.priorityAddresses || keywords != c.keywordRules) {
-            store.ruleConfig = c.copy(priorityAddresses = priority, keywordRules = keywords)
+        if (priority != c.priorityAddresses || keywords != c.keywordRules || schedules != c.schedules) {
+            store.ruleConfig = c.copy(priorityAddresses = priority, keywordRules = keywords, schedules = schedules)
         }
         val guard = GuardText.parse(binding.svGuard.text.toString())
         if (guard != store.guardRules) store.guardRules = guard
@@ -336,11 +358,35 @@ class SovereignSettingsActivity : SimpleActivity() {
             if (preset == Presets.sharedSimQuiet) {
                 val c = store.ruleConfig
                 val kws = addNew(c.keywordRules, Presets.sharedSimKeywords.map { it.copy(enabled = false) }) { it.keyword.lowercase() }
-                store.ruleConfig = c.copy(keywordRules = kws.mapIndexed { n, k -> k.copy(id = "k${n + 1}") })
+                val sch = addNew(c.schedules, Presets.sharedSimSchedules.map { it.copy(enabled = false) }) { it.name }
+                store.ruleConfig = c.copy(keywordRules = kws.mapIndexed { n, k -> k.copy(id = "k${n + 1}") }, schedules = sch)
             }
             SovereignFlags.invalidate()
             load()
             toast(R.string.sv_preset_added)
+        }
+    }
+
+    /** The decision log: newest first, rule and reasons only. Clearing is the owner's choice. */
+    private fun showTrace() = org.fossify.commons.helpers.ensureBackgroundThread {
+        val rows = runCatching { com.sovereignops.sms.vault.Vault.dao(this).trace(50) }.getOrDefault(emptyList())
+        val fmt = DateTimeFormatter.ofPattern("EEE d MMM HH:mm")
+        val text = if (rows.isEmpty()) getString(R.string.sv_trace_empty) else rows.joinToString("\n\n") { r ->
+            val at = java.time.Instant.ofEpochMilli(r.at).atZone(java.time.ZoneId.systemDefault()).format(fmt)
+            "$at · thread ${r.threadId} · ${r.alert.lowercase()} (${r.rule.lowercase()})\n" + r.explanation
+        }
+        runOnUiThread {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.sv_trace)
+                .setMessage(text)
+                .setPositiveButton(android.R.string.ok, null)
+                .setNeutralButton(R.string.sv_trace_clear) { _, _ ->
+                    org.fossify.commons.helpers.ensureBackgroundThread {
+                        runCatching { com.sovereignops.sms.vault.Vault.dao(this).clearTrace() }
+                        runOnUiThread { toast(R.string.sv_trace_cleared) }
+                    }
+                }
+                .show()
         }
     }
 

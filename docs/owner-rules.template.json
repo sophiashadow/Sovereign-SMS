@@ -24,7 +24,12 @@
     "cooldownMinutes": 0,
     "focusUntil": null,
     "focusAction": "HELD",
-    "alertOneTimeCodes": true
+    "alertOneTimeCodes": true,
+    "_schedules": "Schedule rules, checked after quiet hours in list order. Precedence: one-time codes and break-through keywords > priority and personal > thread mute > focus > quiet hours and schedules > unknown senders and quiet keywords. Days 1=Mon..7=Sun; minutes from midnight; an end before the start crosses midnight; start == end means all day. categories: PERSONAL, PROFESSIONAL, UNKNOWN. action: SILENT, HELD or ALERT. Both examples ship disabled.",
+    "schedules": [
+      { "name": "After hours", "days": [1, 2, 3, 4, 5], "startMinute": 1260, "endMinute": 540, "categories": ["PROFESSIONAL", "UNKNOWN"], "action": "HELD", "enabled": false },
+      { "name": "Weekend", "days": [6, 7], "startMinute": 0, "endMinute": 0, "categories": ["PROFESSIONAL"], "action": "SILENT", "enabled": false }
+    ]
   },
   "guard": [
     { "_readme": "Warns above the composer when a draft contains this. regex=false means plain text, case-insensitive.",

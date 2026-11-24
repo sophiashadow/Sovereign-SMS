@@ -65,6 +65,8 @@ class OwnerTemplateTest {
         assertEquals(7, p.templates!!.size)
         assertEquals(com.sovereignops.sms.core.templates.TemplateCategory.entries.toSet(), p.templates!!.mapNotNull { it.category }.toSet())
         assertEquals(2, p.templates!!.count { it.favorite })
+        assertEquals(listOf("After hours", "Weekend"), p.rules!!.schedules.map { it.name })
+        assertTrue(p.rules!!.schedules.none { it.enabled })
     }
 
     @Test

@@ -35,6 +35,17 @@ object RuleConfigCodec {
 internal data class WindowDoc(val days: List<Int>, val startMinute: Int, val endMinute: Int)
 
 @Serializable
+internal data class ScheduleDoc(
+    val name: String,
+    val days: List<Int>,
+    val startMinute: Int,
+    val endMinute: Int,
+    val categories: List<String> = listOf(Category.PROFESSIONAL.name, Category.UNKNOWN.name),
+    val action: String = Alert.HELD.name,
+    val enabled: Boolean = true,
+)
+
+@Serializable
 internal data class KeywordDoc(
     val id: String,
     val keyword: String,
@@ -59,6 +70,7 @@ internal data class RuleConfigDoc(
     val alertOneTimeCodes: Boolean = true,
     val quietHoursCategories: List<String> = Category.entries.map { it.name },
     val offDutyAction: String = Alert.SILENT.name,
+    val schedules: List<ScheduleDoc> = emptyList(),
 ) {
     fun toConfig() = RuleConfig(
         enabled = enabled,
@@ -80,6 +92,16 @@ internal data class RuleConfigDoc(
         alertOneTimeCodes = alertOneTimeCodes,
         quietHoursCategories = quietHoursCategories.map { Category.valueOf(it) }.toSet(),
         offDutyAction = Alert.valueOf(offDutyAction),
+        schedules = schedules.map { d ->
+            require(d.startMinute in 0 until 1440 && d.endMinute in 0 until 1440) { "Schedule time out of range in “${d.name}”" }
+            ScheduleRule(
+                name = d.name.trim(),
+                window = TimeWindow(d.days.map { DayOfWeek.of(it) }.toSet(), LocalTime.of(d.startMinute / 60, d.startMinute % 60), LocalTime.of(d.endMinute / 60, d.endMinute % 60)),
+                categories = d.categories.map { Category.valueOf(it.uppercase()) }.toSet(),
+                action = Alert.valueOf(d.action.uppercase()),
+                enabled = d.enabled,
+            )
+        },
     )
 
     companion object {
@@ -102,6 +124,13 @@ internal data class RuleConfigDoc(
             alertOneTimeCodes = c.alertOneTimeCodes,
             quietHoursCategories = c.quietHoursCategories.map { it.name }.sorted(),
             offDutyAction = c.offDutyAction.name,
+            schedules = c.schedules.map { r ->
+                ScheduleDoc(
+                    r.name, r.window.days.map(DayOfWeek::getValue).sorted(),
+                    r.window.start.hour * 60 + r.window.start.minute, r.window.end.hour * 60 + r.window.end.minute,
+                    r.categories.map { it.name }.sorted(), r.action.name, r.enabled,
+                )
+            },
         )
     }
 }

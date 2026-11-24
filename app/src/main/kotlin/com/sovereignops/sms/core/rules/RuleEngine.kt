@@ -51,9 +51,42 @@ enum class KeywordEffect {
 
 /** Identifies which rule decided, so the UI can explain and the user can reverse it. */
 enum class RuleId {
-    RULES_OFF, QUARANTINED, COVER, PRIORITY_CONTACT, CONVERSATION_PRIORITY, CONVERSATION_MUTED, ONE_TIME_CODE,
-    KEYWORD_PRIORITY, FOCUS, WORKSPACE_FOCUS, OFF_DUTY, QUIET_HOURS, UNKNOWN_SENDER, KEYWORD_SILENT, FLAG_SILENT, COOLDOWN, DEFAULT,
+    RULES_OFF, QUARANTINED, COVER,
+    ONE_TIME_CODE, KEYWORD_PRIORITY,
+    PRIORITY_CONTACT, CONVERSATION_PRIORITY, PERSONAL,
+    CONVERSATION_MUTED,
+    FOCUS, WORKSPACE_FOCUS, OFF_DUTY,
+    QUIET_HOURS, SCHEDULE,
+    UNKNOWN_SENDER, KEYWORD_SILENT, FLAG_SILENT, COOLDOWN,
+    DEFAULT,
+    ;
+
+    /** The precedence tier shown in the trace log; lower wins. */
+    val tier: Int
+        get() = when (this) {
+            RULES_OFF, QUARANTINED, COVER -> 0
+            ONE_TIME_CODE, KEYWORD_PRIORITY -> 1
+            PRIORITY_CONTACT, CONVERSATION_PRIORITY, PERSONAL -> 2
+            CONVERSATION_MUTED -> 3
+            FOCUS, WORKSPACE_FOCUS, OFF_DUTY -> 4
+            QUIET_HOURS, SCHEDULE -> 5
+            UNKNOWN_SENDER, KEYWORD_SILENT, FLAG_SILENT, COOLDOWN -> 6
+            DEFAULT -> 7
+        }
 }
+
+/**
+ * A named schedule: during [window], messages in [categories] get [action]. Several can
+ * be stacked (for a shared SIM: professional held overnight, silent at weekends). They
+ * rank with quiet hours; the first enabled match in list order decides between them.
+ */
+data class ScheduleRule(
+    val name: String,
+    val window: TimeWindow,
+    val categories: Set<Category>,
+    val action: Alert,
+    val enabled: Boolean = true,
+)
 
 /**
  * A weekly window. [days] are the days the window *starts* on. When [end] is not
@@ -107,6 +140,7 @@ data class RuleConfig(
     val quietHoursCategories: Set<Category> = Category.entries.toSet(),
     /** In PERSONAL workspace mode, what happens to professional and unknown messages. */
     val offDutyAction: Alert = Alert.SILENT,
+    val schedules: List<ScheduleRule> = emptyList(),
 )
 
 data class IncomingMessage(
@@ -144,19 +178,18 @@ object RuleEngine {
 
     /**
      * Precedence, highest first. The first matching rule decides; every other match is
-     * reported in [Decision.alsoMatched] so a preview can show what *would* have applied.
+     * reported in [Decision.alsoMatched] so the trace can show what *would* have applied.
      *
-     *  1. priority contact / priority conversation  -> ALERT
-     *  2. muted conversation                       -> SILENT
-     *  3. one-time code (if enabled)               -> ALERT
-     *  4. priority keyword                         -> ALERT
-     *  5. focus mode                               -> focusAction
-     *  6. quiet hours                              -> quietHoursAction
-     *  7. unknown sender                           -> unknownSenderAction (if not ALERT)
-     *  8. silent keyword                           -> SILENT
-     *  8b. incoming flag marked silent             -> SILENT
-     *  9. cooldown                                 -> SILENT
-     * 10. default                                  -> ALERT
+     *  0. quarantined sender -> SILENT (even with rules off); Quick Cover -> HELD for
+     *     non-personal, non-code messages; rules off -> ALERT
+     *  1. Emergency / OTP:      one-time code (if enabled), break-through ("priority") keyword -> ALERT
+     *  2. Personal / Priority:  priority contact, priority conversation, personal
+     *                           conversation when quiet hours are not scoped to personal -> ALERT
+     *  3. Thread override:      muted conversation -> SILENT
+     *  4. Focus:                timed focus, Focus workspace, Personal workspace (off duty)
+     *  5. Scheduled quiet:      quiet hours, then schedule rules in list order
+     *  6. Keyword / Unknown:    unknown sender, quiet keyword, silent flag, cooldown
+     *  7. default -> ALERT
      */
     fun evaluate(config: RuleConfig, message: IncomingMessage): Decision {
         val keywordHits = config.keywordRules.filter { it.matches(message.body) }
@@ -180,21 +213,30 @@ object RuleEngine {
         val candidates = ArrayList<Triple<RuleId, Alert, String>>()
         val t = message.receivedAt
 
+        // 1. Emergency / OTP
+        if (isCode) {
+            candidates += Triple(RuleId.ONE_TIME_CODE, Alert.ALERT, "Looks like a one-time code")
+        }
+        keywordHits.firstOrNull { it.effect == KeywordEffect.PRIORITY }?.let {
+            candidates += Triple(RuleId.KEYWORD_PRIORITY, Alert.ALERT, "Break-through keyword “${it.keyword.trim()}”")
+        }
+        // 2. Personal / Priority
         if (config.priorityAddresses.any { Addresses.sameNumber(it, message.address) }) {
             candidates += Triple(RuleId.PRIORITY_CONTACT, Alert.ALERT, "Priority contact")
         }
         if (message.conversationPolicy == ConversationPolicy.PRIORITY) {
             candidates += Triple(RuleId.CONVERSATION_PRIORITY, Alert.ALERT, "Conversation marked priority")
         }
+        if (message.category == Category.PERSONAL && Category.PERSONAL !in config.quietHoursCategories &&
+            message.conversationPolicy != ConversationPolicy.MUTED
+        ) {
+            candidates += Triple(RuleId.PERSONAL, Alert.ALERT, "Personal conversation rings through focus and quiet hours")
+        }
+        // 3. Thread override
         if (message.conversationPolicy == ConversationPolicy.MUTED) {
             candidates += Triple(RuleId.CONVERSATION_MUTED, Alert.SILENT, "Conversation muted")
         }
-        if (isCode) {
-            candidates += Triple(RuleId.ONE_TIME_CODE, Alert.ALERT, "Looks like a one-time code")
-        }
-        keywordHits.firstOrNull { it.effect == KeywordEffect.PRIORITY }?.let {
-            candidates += Triple(RuleId.KEYWORD_PRIORITY, Alert.ALERT, "Priority keyword “${it.keyword.trim()}”")
-        }
+        // 4. Focus
         config.focusUntil?.let { until ->
             if (t.isBefore(until)) {
                 candidates += Triple(RuleId.FOCUS, config.focusAction, "Focus mode until ${until.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))}")
@@ -206,9 +248,14 @@ object RuleEngine {
         if (message.workspaceMode == WorkspaceMode.PERSONAL && message.category != Category.PERSONAL) {
             candidates += Triple(RuleId.OFF_DUTY, config.offDutyAction, "Personal mode: ${message.category.name.lowercase()} conversation")
         }
+        // 5. Scheduled quiet
         config.quietHours.firstOrNull { it.contains(t) && message.category in config.quietHoursCategories }?.let {
             candidates += Triple(RuleId.QUIET_HOURS, config.quietHoursAction, "Quiet hours ${it.describe()}")
         }
+        config.schedules.firstOrNull { it.enabled && message.category in it.categories && it.window.contains(t) }?.let {
+            candidates += Triple(RuleId.SCHEDULE, it.action, "Schedule “${it.name}” ${it.window.describe()}")
+        }
+        // 6. Keyword / Unknown
         if (!message.isKnownContact && config.unknownSenderAction != Alert.ALERT) {
             candidates += Triple(RuleId.UNKNOWN_SENDER, config.unknownSenderAction, "Sender is not in contacts")
         }

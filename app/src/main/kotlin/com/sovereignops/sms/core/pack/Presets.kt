@@ -56,7 +56,7 @@ object Presets {
         ),
     )
 
-    /** Quiet-hours wording only; schedule rules for a shared SIM are configured on the Schedule screen. */
+    /** Flag wording; its schedule and keyword rules are [sharedSimSchedules] and [sharedSimKeywords]. */
     val sharedSimQuiet = Preset(
         id = "shared-sim-quiet",
         title = "Shared-SIM Quiet Hours Starter",
@@ -68,6 +68,15 @@ object Presets {
                     stages = setOf(Stage.NEW), silent = true),
             ),
         ),
+    )
+
+    /** Schedule rules for the Shared-SIM preset; merged into the rules config, disabled. */
+    val sharedSimSchedules = com.sovereignops.sms.core.rules.ScheduleText.parse(
+        """
+        #off Professional after hours: weekdays 21:00-09:00 professional,unknown held
+        #off Professional weekends: weekends 00:00-00:00 professional,unknown silent
+        #off Personal during sessions: weekdays 10:00-18:00 personal silent
+        """.trimIndent(),
     )
 
     /** Keyword rules for the Shared-SIM preset; merged into the rules config, disabled. */

@@ -36,7 +36,12 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | C | Per-conversation Follow rules / Priority / Muted | compiled |
 | B | Per-conversation category (Automatic / Personal / Professional / Unknown) | compiled; resolution tested |
 | B | Tags, notes, pins | not started (upstream has pins) |
-| C | Daily summaries, "why did this alert" log | not started (the preview gives explanations) |
+| E | Precedence: Emergency/OTP (one-time code, break-through keyword) > Personal/Priority (priority contact or conversation; personal conversation when quiet hours exclude personal) > thread mute > focus (timed, Focus workspace, off duty) > quiet hours, then schedule rules > unknown sender, quiet keyword, silent flag, cooldown. Every other match is listed as "Also matched" | tested (PrecedenceTest 7, including an exhaustive tier check) |
+| E | Schedule rules: text editor in Settings (`Name: days HH:MM-HH:MM categories action`, `#off` to disable; bad lines listed, not dropped silently) and pack field `rules.schedules`; Shared-SIM preset adds 3 disabled schedules | tested (ScheduleTextTest 4, PackTest); editor compiled |
+| E | "Why did this happen?" decision log: rule, outcome and explanation per incoming message (never body or address), kept to the last 200 in the encrypted vault; viewer and Clear in Settings | compiled; explanation content tested through the engine |
+| E | Timed focus 30 / 60 / 90 min or until a chosen time; a silent, private "focus ends soon" notice about 5 min before the end (inexact alarm window, no exact-alarm permission); turning focus off cancels it | timing tested (FocusTimerTest); alarm and receiver compiled. The notice does not survive a reboot |
+| E | Ledger (Settings → Ledger): date (day of week derived), room cost, clients booked, clients showed, gross, session hours, overhead hours, note. Show rate, Net and BCR = (gross − room cost) / (session + overhead hours) derived; totals, session share and per-weekday workload; CSV (RFC 4180) and Markdown export through the system file picker | metrics and exports tested (LedgerTest 5, synthetic figures); screen compiled |
+| C | Daily summaries | not started |
 | D | Template categories (Initial Info, Screening Gate, Verification Request, Deflection / Decline, Booking Confirm, Reconfirm, Follow-Up) and favorites; text form `Title \| category=x favorite`; pack fields `category`, `favorite` (unknown category rejects the file) | tested (QuickReplyTest 4, PackTest 2) |
 | D | Quick-reply chip bar above the composer: favorites insert directly, category chips open that list; hidden with no templates. Inserting never sends; the draft guard and confirm-send gate check the result like typed text | compiled |
 | D | Placeholders `{alias}`, `{time_window}` from the client card; `{date}` and anything missing asked for (date prefilled with today); other braces untouched | tested |
@@ -56,4 +61,4 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | G | Workload insights | not started |
 | — | Signed release build | not done (no signing key; needs owner authorisation) |
 
-Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice D) had 99 tests with 0 failures and 0 errors.
+Test command: `./gradlew testFossDebugUnitTest`. The last run (Slice E) had 116 tests with 0 failures and 0 errors.

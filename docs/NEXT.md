@@ -5,7 +5,7 @@
 - Nothing has been installed, device-tested or carrier-tested yet. Only JVM tests and a compile have run.
 - There's one quiet-hours window in the UI. Extra windows can be imported through JSON and are kept.
 - The held summary counts messages but doesn't list them. It clears when the inbox opens.
-- Slice A (vault, cards, quarantine list) is done; Slices B–F are in progress on this branch.
+- Slices A–E are committed on this branch; Slice F (preservation export, `.sovbak`, hardening, release build) is in progress.
 - The draft guard warns and asks for a second tap; it never blocks. Pair rules with a window use the thread history in the conversation view and the badge, but not at receipt time (receipt sees only the new message).
 - Known/unknown: a sender with a card (alias or stage) is known. Otherwise the inbox compares the title with the number; the receiver uses a Contacts lookup.
 - Room schemas are generated to `app/schemas/` but not committed (upstream ignores that folder); vault schema is version 1.
@@ -27,3 +27,10 @@
 - Quick Cover filters the inbox and holds alerts. Upstream search and direct thread links (shortcuts, share targets) can still open a Professional thread while cover is on; not gated yet.
 - With no screen lock or biometrics enrolled on the device, leaving Quick Cover needs no authentication.
 - Lock-screen behaviour of the neutral public notification and the Copy code action needs a device test (One UI may restyle both).
+
+## Slice E follow-ups (2026-11-24)
+
+- The focus-ending notice uses an inexact alarm window (about a minute wide) and is not rescheduled after a reboot; focus itself still ends on time because the engine compares the clock.
+- The decision log is global (thread id shown), not yet per-conversation from the thread menu.
+- Ledger figures are whatever the owner types; nothing is read from messages. Hours are capped at 24 per field.
+- Schedules are edited as text; a visual builder can come later if text proves awkward on the phone.

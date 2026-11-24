@@ -97,7 +97,24 @@ object Sovereign {
         )
         val decision = RuleEngine.evaluate(store.ruleConfig, message)
         store.addThreadTags(threadId, decision.tags)
+        trace(context, threadId, decision)
         return decision to Workspace.channel(decision, category, regular = card?.stage == com.sovereignops.sms.core.crm.Stage.REGULAR)
+    }
+
+    const val TRACE_KEEP = 200
+
+    /** "Why did this happen?": the rule, outcome and explanation only; never the body or the address. */
+    private fun trace(context: Context, threadId: Long, decision: Decision) = org.fossify.commons.helpers.ensureBackgroundThread {
+        runCatching {
+            val dao = com.sovereignops.sms.vault.Vault.dao(context)
+            dao.addTrace(
+                com.sovereignops.sms.vault.TraceRow(
+                    at = System.currentTimeMillis(), threadId = threadId, rule = decision.decidedBy.name,
+                    alert = decision.alert.name, explanation = decision.explanation.joinToString("\n"),
+                ),
+            )
+            dao.trimTrace(TRACE_KEEP)
+        }
     }
 
     /**

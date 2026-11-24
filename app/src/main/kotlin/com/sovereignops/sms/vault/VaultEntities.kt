@@ -79,7 +79,17 @@ data class LedgerRow(
     val sessionHours: Double,
     val overheadHours: Double,
     val note: String?,
-)
+) {
+    fun toEntry() = com.sovereignops.sms.core.ledger.LedgerEntry(
+        id, java.time.LocalDate.parse(date), roomCostCents, booked, showed, grossCents, sessionHours, overheadHours, note,
+    )
+
+    companion object {
+        fun from(e: com.sovereignops.sms.core.ledger.LedgerEntry) = LedgerRow(
+            e.id, e.date.toString(), e.roomCostCents, e.clientsBooked, e.clientsShowed, e.grossCents, e.sessionHours, e.overheadHours, e.note,
+        )
+    }
+}
 
 @Entity(tableName = "counters")
 data class CounterRow(@PrimaryKey val name: String, val value: Long)
