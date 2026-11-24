@@ -29,9 +29,60 @@ data class Pattern(val text: String, val kind: MatchKind) {
                 }
                 out
             }
-            MatchKind.REGEX -> Regex(text, RegexOption.IGNORE_CASE).findAll(draft).filter { it.value.isNotEmpty() }.map { it.range }.toList()
+            MatchKind.REGEX -> RegexRunner.find(text, draft)
         }
     }
+}
+
+class RegexTimeout : RuntimeException("Pattern took too long")
+
+/**
+ * Bounds user-written regexes, which run on every incoming message. Two layers:
+ *  - each match runs on a worker thread and the caller waits at most [BUDGET_MS]; a pattern that
+ *    runs out is reported invalid (never as a match) and isn't run again in this process, so a
+ *    bad pattern can stall at most one background thread, never message receipt;
+ *  - on the JVM the input is read through [Budgeted], which also stops the worker itself.
+ *    (Inference: Android's regex engine copies the input natively, so there only the first layer applies.)
+ */
+object RegexRunner {
+    const val BUDGET_MS = 100L
+    private val pool = java.util.concurrent.Executors.newCachedThreadPool { r -> Thread(r, "sv-regex").apply { isDaemon = true } }
+    private val timedOut: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    fun find(pattern: String, input: String): List<IntRange> {
+        if (pattern in timedOut) throw RegexTimeout()
+        val regex = Regex(pattern, RegexOption.IGNORE_CASE) // compile errors surface here, as before
+        val deadline = System.nanoTime() + BUDGET_MS * 1_000_000
+        val job = pool.submit(java.util.concurrent.Callable {
+            regex.findAll(Budgeted(input, deadline)).filter { it.value.isNotEmpty() }.map { it.range }.toList()
+        })
+        return try {
+            job.get(BUDGET_MS, java.util.concurrent.TimeUnit.MILLISECONDS)
+        } catch (e: java.util.concurrent.TimeoutException) {
+            job.cancel(true)
+            timedOut += pattern
+            throw RegexTimeout()
+        } catch (e: java.util.concurrent.ExecutionException) {
+            if (e.cause is RegexTimeout) timedOut += pattern
+            throw e.cause ?: e
+        }
+    }
+}
+
+/**
+ * Text that stops a regex which backtracks too long: java.util.regex reads the input through
+ * charAt, so checking the clock there bounds any pattern, however it is written. Checked every
+ * 1024 reads to keep ordinary matching fast.
+ */
+private class Budgeted(private val s: CharSequence, private val deadline: Long) : CharSequence {
+    private var reads = 0
+    override val length get() = s.length
+    override fun get(index: Int): Char {
+        if (++reads and 1023 == 0 && System.nanoTime() > deadline) throw RegexTimeout()
+        return s[index]
+    }
+    override fun subSequence(startIndex: Int, endIndex: Int): CharSequence = Budgeted(s.subSequence(startIndex, endIndex), deadline)
+    override fun toString() = s.toString()
 }
 
 /** Derived from the rule's fields; shown in the UI and in exported files. */

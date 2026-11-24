@@ -277,9 +277,12 @@
             android:exported="false"
             android:taskAffinity="com.klinker.android.messaging.MMS_SENT" />
 
+        <!-- Sovereign SMS: not exported. It reads and then deletes the file named in its intent, so an
+             exported copy let any app delete files in this app's storage. mmslib reaches it only by an
+             explicit broadcast from this process, matched by taskAffinity (as MmsSentReceiver below). -->
         <receiver
             android:name=".receivers.MmsReceiver"
-            android:exported="true"
+            android:exported="false"
             android:taskAffinity="com.klinker.android.messaging.MMS_RECEIVED" />
 
         <receiver

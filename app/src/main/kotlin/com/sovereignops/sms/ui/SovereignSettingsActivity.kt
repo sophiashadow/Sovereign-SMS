@@ -28,6 +28,7 @@ import com.sovereignops.sms.core.rules.ScheduleText
 import com.sovereignops.sms.core.rules.TimeWindow
 import org.fossify.commons.dialogs.RadioGroupDialog
 import org.fossify.commons.extensions.appLockManager
+import com.sovereignops.sms.core.io.readAtMost
 import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.beVisibleIf
 import org.fossify.commons.extensions.getTimePickerDialogTheme
@@ -72,8 +73,8 @@ class SovereignSettingsActivity : SimpleActivity() {
 
     private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
-        val text = runCatching { contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) } }.getOrNull()
-        val error = if (text == null) "unreadable file" else store.importPack(text)
+        val text = runCatching { contentResolver.openInputStream(uri)!!.use { it.readAtMost(com.sovereignops.sms.core.io.Limits.SETTINGS_PACK).toString(Charsets.UTF_8) } }
+        val error = text.fold({ store.importPack(it) }, { if (it is com.sovereignops.sms.core.io.TooLarge) it.message else "unreadable file" })
         if (error == null) {
             toast(R.string.sv_imported)
             load()

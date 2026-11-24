@@ -1,4 +1,4 @@
-# Security review: Slice F release build
+# Security review: v0.1.0-alpha.1 release candidate
 
 Date: 2026-11-24.
 
@@ -87,11 +87,11 @@ Candidates for removal (owner decision; each removes an upstream feature): CALL_
 | `HeadlessSmsSendService` | SEND_RESPOND_VIA_MESSAGE | Required |
 | `QuickCoverTile` | BIND_QUICK_SETTINGS_TILE | Only the system can bind it |
 | `MainActivity`, `NewConversationActivity` (SENDTO/VIEW/SEND), `SettingsActivity`, `ArchivedConversationsActivity`, `RecycleBinConversationsActivity`, launcher aliases | none | As upstream. They open UI only, and nothing sends without a tap |
-| **`MmsReceiver`** | **none, no intent filter** | **Finding (upstream).** It is exported with no permission. It receives the MMS download-complete `PendingIntent`, which the system delivers under our own identity, so it probably doesn't need to be exported. Another app could send it a forged explicit broadcast. The impact isn't analysed. *Recommendation:* set `exported="false"`, then confirm that MMS receipt still works on a device. Not changed yet, because breaking MMS receipt untested is worse than the open receiver |
+| `MmsReceiver` | **not exported** (fixed, F-1 below) | Reached only by an explicit broadcast from this app's own process |
 | `FossifyBroadcastReceiver` | none | Re-reads Fossify theme settings only, so the effect is limited to colours. Removal candidate |
 | `ProfileInstallReceiver` (AndroidX) | DUMP | Only the system or shell can send to it |
 
-Every other Sovereign component is **not exported**: the settings, ledger, portability and availability-queue activities, plus `FocusEndingReceiver` and `CopyCodeReceiver`. The client card is a dialog inside the thread screen. `QuickCoverTile` is the only exported Sovereign component, and only the system can bind it.
+Every other Sovereign component is **not exported**: the settings, ledger, portability and availability-queue activities, plus `FocusEndingReceiver`, `CopyCodeReceiver` and `SummaryReceiver` (system broadcasts such as BOOT_COMPLETED still reach a non-exported receiver). `ManifestExportTest` fails the build when a component is exported without being on its allow-list. The client card is a dialog inside the thread screen. `QuickCoverTile` is the only exported Sovereign component, and only the system can bind it.
 
 ## Sovereign behaviour
 
@@ -100,10 +100,33 @@ Every other Sovereign component is **not exported**: the settings, ledger, porta
 - **Nothing auto-sends.** Templates and placeholders insert into the composer. The availability queue sends only on a tap, and a warning needs a second tap. No Sovereign code sends on its own.
 - **Unknown-sender detection fails toward alerting.** A contact lookup error counts as known.
 
+## Adversarial review (2026-11-24)
+
+Method: source read of the Sovereign code and the upstream paths it touches, `javap` disassembly of the
+bundled mmslib (`com.klinker.android.send_message` 1.0.1), and JVM tests. **No emulator or device was
+available** (no `/dev/kvm`), so nothing below was reproduced dynamically.
+
+| ID | Area | Finding | Evidence | Status |
+|---|---|---|---|---|
+| F-1 | Forged intents | **High.** `MmsReceiver` was exported with no permission. Its base class (`MmsReceivedReceiver.onReceive`, final) reads the path in the `file_path` extra, tries to parse it as an MMS PDU and then calls `File(file_path).delete()`. For a non-PDU file, `getNotificationTask` and `DownloadRequest.persist` return null without throwing, so the delete is reached. Any installed app, with no permissions, could delete files in this app's private storage (the vault database, its wrapped key, settings) | Bytecode (`javap -c`): `lambda$onReceive$0` offsets 9–51 (read), 204 (`persist`), 248 (`File.delete`); exception table shows no handler between them | **Fixed**: `exported="false"`. The download chain is PushReceiver (BROADCAST_WAP_PUSH) → `DownloadManager` → system MMS service → a runtime receiver on a random-UUID action → `BroadcastUtils.sendExplicitBroadcast`, which finds `MmsReceiver` by taskAffinity in our own package and sends an explicit same-package broadcast. Same-package delivery doesn't need `exported`. `MmsSentReceiver` already used this path unexported upstream. Regression test: `ManifestExportTest`. **Release gate:** receive a real MMS on a device before release |
+| F-2 | Regex DoS | **Medium.** User-written or imported regex flag rules run on every incoming body. A backtracking pattern (for example `(.*a){12}x`) could stall the receipt path for seconds or longer | `RegexBudgetTest` (a 40-character input that runs unbounded without the fix) | **Fixed**: each regex match runs on a worker with a 100 ms limit. A pattern that runs out is reported invalid (shown in Settings), never treated as a match, and isn't run again in that process. *Inference:* Android's regex engine copies the input natively, so on a device the worker may keep running in the background until it finishes. The receipt path no longer waits for it |
+| F-3 | Oversized imports | **Low.** Settings-pack import and `.sovbak` restore read the whole file into memory; a huge file could crash the app (no data loss: restore parses before writing) | Source | **Fixed**: 1 MB limit for settings packs and 32 MB for backups (`core/io/Bounded.kt`, `BoundedTest`) |
+| R-1 | MMS runtime receiver | mmslib registers its download receiver as `RECEIVER_EXPORTED` on Android 14+, on a random UUID action, and builds an implicit `PendingIntent` for it | Bytecode (`DownloadManager`: `registerReceiver(…, 2)`) | Accepted (upstream library). The action is unguessable and single-use; changing it means patching the library |
+| R-2 | `FossifyBroadcastReceiver` | Exported, no permission; re-reads theme settings | Merged manifest | Accepted; colours only |
+| C-1 | Clipboard | The one-time code is copied only on a tap, marked `EXTRA_IS_SENSITIVE` on Android 13+, and validated as 4–8 digits | Source (`CopyCodeReceiver`) | No issue |
+| C-2 | Duplicate sends | The availability queue disables Send while a send runs and re-enables it only on failure; nothing sends without a tap | Source (`SovereignQueueActivity.send`) | No issue |
+| C-3 | Logging | No `Log`, `println` or `printStackTrace` in Sovereign code; release strips `Log.v/d/i` everywhere | `grep`, R8 rules | No issue. mmslib's own `Log.e`/`Log.w` may log MMS metadata (not bodies) on a device: unverified |
+| C-4 | Notifications | Daily summary: silent, private, a count-free public version; with Quick Cover or the app lock on, no counts. Held and quarantine notices are neutral | Source, `DailySummaryTest` | No issue |
+| C-5 | Process death, concurrent receipt | Summary counters use single atomic SQL statements; the decision log is append-and-trim; restore writes in one transaction | Source | No issue |
+| C-6 | Keystore, corruption | An unreadable vault is renamed aside, never deleted (F-1 was the only delete path found). Keys aren't bound to user authentication, so biometric changes don't invalidate them | Source (`Vault.kt`) | No issue |
+| C-7 | Dependencies | The online CVE lookup could not run (the session's network proxy refuses `api.osv.dev`). Versions are in `gradle/libs.versions.toml`. The app has no INTERNET permission, which limits network-borne library bugs | — | **NOT_RUN**: owner to enable GitHub dependency alerts or run a scanner |
+| C-8 | R8 | Release-only failures are possible where code is reached by reflection. The keep rules cover SQLCipher, mmslib and kotlinx.serialization (its own consumer rules) | Release build assembled | Device check of backup/restore on the **release** APK is a release gate |
+| C-9 | SMS role | When the default-SMS role is revoked, receipt stops (upstream behaviour) and so does summary counting; nothing is lost | Source | Device check in the acceptance list |
+
 ## Known gaps
 
-- The `MmsReceiver` export (above).
+- **MMS receipt after F-1** must be confirmed on a device.
 - **System block list.** *Inference:* numbers on Android's own block list may be dropped before any app sees them. Sovereign's Quarantine list is the preserving alternative, and the app warns before you block at OS level. Needs a device test.
-- **App lock.** Upstream's lock hasn't been re-verified, and it doesn't offer the device screen lock as a method.
+- **App lock.** Upstream's lock covers every app screen (Fossify `BaseSimpleActivity.onResume` → `maybeLaunchAppUnlockActivity`, checked by disassembly). It hasn't been re-verified on a device, and it doesn't offer the device screen lock as a method.
 - **Encryption.** Carrier SMS is not end-to-end encrypted, and this app doesn't change that.
-- **Signing.** The release key is throwaway. Production needs the owner's keystore and a pinned certificate digest.
+- **Signing.** The release key used here is throwaway. Production needs the owner's keystore and a pinned certificate digest (`BUILD_AND_SIGNING.md`).

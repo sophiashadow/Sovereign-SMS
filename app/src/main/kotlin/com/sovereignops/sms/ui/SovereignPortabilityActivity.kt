@@ -1,5 +1,7 @@
 package com.sovereignops.sms.ui
 
+import com.sovereignops.sms.core.io.Limits
+import com.sovereignops.sms.core.io.readAtMost
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -221,7 +223,7 @@ class SovereignPortabilityActivity : SimpleActivity() {
                 val file = SovBak.seal(plain, pw.copyOf(), System.currentTimeMillis())
                 plain.fill(0)
                 contentResolver.openOutputStream(uri, "wt")!!.use { it.write(file) }
-                val back = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                val back = contentResolver.openInputStream(uri)!!.use { it.readAtMost(Limits.BACKUP) }
                 val reopened = SovBak.open(back, pw.copyOf()).getOrThrow()
                 Backup.decode(reopened).cards.size
             }
@@ -237,7 +239,7 @@ class SovereignPortabilityActivity : SimpleActivity() {
         say(getString(R.string.sv_working))
         ensureBackgroundThread {
             val content = runCatching {
-                val file = contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+                val file = contentResolver.openInputStream(uri)!!.use { it.readAtMost(Limits.BACKUP) }
                 Backup.decode(SovBak.open(file, pw.copyOf()).getOrThrow())
             }
             content.fold(
