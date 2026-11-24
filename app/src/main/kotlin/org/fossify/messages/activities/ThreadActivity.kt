@@ -395,6 +395,8 @@ class ThreadActivity : SimpleActivity() {
             R.id.archive -> archiveConversation()
             R.id.unarchive -> unarchiveConversation()
             R.id.rename_conversation -> renameConversation()
+            R.id.sovereign_insert_template -> com.sovereignops.sms.ui.SovereignComposer.pickTemplate(this, binding.messageHolder.threadTypeMessage) // Sovereign SMS
+            R.id.sovereign_category -> com.sovereignops.sms.ui.SovereignComposer.pickCategory(this, threadId) // Sovereign SMS
             R.id.sovereign_policy -> com.sovereignops.sms.ui.SovereignSettingsActivity.pickPolicy(this, threadId) // Sovereign SMS
             R.id.conversation_details -> launchConversationDetails(threadId)
             R.id.add_number_to_contact -> addNumberToContact()
@@ -887,6 +889,7 @@ class ThreadActivity : SimpleActivity() {
             }
 
             threadSendMessage.isClickable = false
+            com.sovereignops.sms.ui.SovereignComposer.attachGuard(this@ThreadActivity, threadTypeMessage, binding.sovereignGuardBanner) // Sovereign SMS
             threadTypeMessage.onTextChangeListener {
                 messageToResend = null
                 checkSendMessageAvailability()

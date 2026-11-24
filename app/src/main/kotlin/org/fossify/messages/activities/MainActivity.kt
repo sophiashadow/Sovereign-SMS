@@ -93,6 +93,7 @@ class MainActivity : SimpleActivity() {
         appLaunched(BuildConfig.APPLICATION_ID)
         setupOptionsMenu()
         refreshMenuItems()
+        com.sovereignops.sms.ui.SovereignInbox.setup(this, binding.svModeGroup) { setupConversations(sovereignAll) } // Sovereign SMS
 
         setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.conversationsList))
 
@@ -400,11 +401,15 @@ class MainActivity : SimpleActivity() {
         return currAdapter as ConversationsAdapter
     }
 
+    // Sovereign SMS: unfiltered list, kept so switching workspace mode re-filters instantly.
+    private var sovereignAll: ArrayList<Conversation> = ArrayList()
+
     private fun setupConversations(
         conversations: ArrayList<Conversation>,
         cached: Boolean = false,
     ) {
-        val sortedConversations = conversations
+        sovereignAll = conversations
+        val sortedConversations = com.sovereignops.sms.ui.SovereignInbox.filter(this, conversations)
             .sortedWith(
                 compareByDescending<Conversation> {
                     config.pinnedConversations.contains(it.threadId.toString())

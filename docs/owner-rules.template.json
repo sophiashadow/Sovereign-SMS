@@ -1,0 +1,38 @@
+{
+  "_readme": "Template for your private owner-rules.json. Copy it to the phone, fill it in, and import it through Settings > Sovereign SMS > Import. Keep the filled copy out of Git. Keys starting with _ are comments and are ignored. Leave out any section (rules, guard, templates) to keep what the app already has.",
+  "format": "sovereign-sms/pack",
+  "version": 1,
+  "rules": {
+    "_readme": "Notification rules. Actions: ALERT, SILENT, HELD. Days: 1=Mon..7=Sun. Minutes from midnight: 1320 = 22:00.",
+    "format": "sovereign-sms/rules",
+    "version": 1,
+    "enabled": true,
+    "quietHours": [
+      { "days": [1, 2, 3, 4, 5, 6, 7], "startMinute": 1320, "endMinute": 420 }
+    ],
+    "quietHoursAction": "SILENT",
+    "_quietHoursCategories": "Leave out PERSONAL so personal contacts ring through quiet hours.",
+    "quietHoursCategories": ["PROFESSIONAL", "UNKNOWN"],
+    "offDutyAction": "SILENT",
+    "unknownSenderAction": "ALERT",
+    "_priorityAddresses": "Numbers that always alert. Example uses a fictional 555 number; replace it.",
+    "priorityAddresses": ["+19195550142"],
+    "keywordRules": [
+      { "id": "k1", "keyword": "running late", "tag": "schedule", "effect": "PRIORITY", "enabled": true },
+      { "id": "k2", "keyword": "REPLACE_ME", "tag": null, "effect": "SILENT", "enabled": false }
+    ],
+    "cooldownMinutes": 0,
+    "focusUntil": null,
+    "focusAction": "HELD",
+    "alertOneTimeCodes": true
+  },
+  "guard": [
+    { "_readme": "Warns above the composer when a draft contains this. regex=false means plain text, case-insensitive.",
+      "name": "Protected term", "pattern": { "text": "REPLACE_WITH_A_WORD_YOU_NEVER_SEND", "regex": false }, "enabled": true },
+    { "_readme": "Pair rule: warns only when both appear in the same draft.",
+      "name": "Price next to a term", "pattern": { "text": "\\$\\s?\\d+", "regex": true }, "pair": { "text": "REPLACE_WITH_TERM", "regex": false }, "enabled": false }
+  ],
+  "templates": [
+    { "title": "Info request", "body": "Thanks for reaching out. To check availability, please send your name, the time you'd like, how long, and the general area." }
+  ]
+}

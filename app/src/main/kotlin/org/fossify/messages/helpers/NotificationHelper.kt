@@ -47,16 +47,19 @@ class NotificationHelper(private val context: Context) {
         sender: String?,
         alertOnlyOnce: Boolean = false,
         // Sovereign SMS: post on the low-importance quiet channel (rules engine SILENT).
-        quiet: Boolean = false
+        quiet: Boolean = false,
+        // Sovereign SMS: per-category channel chosen by the rules (already created).
+        sovereignChannel: String? = null
     ) {
         val hasCustomNotifications =
             context.config.customNotifications.contains(threadId.toString())
         val notificationChannelId = when {
             quiet -> SovereignNotifications.quietChannel(context)
             hasCustomNotifications -> threadId.toString()
+            sovereignChannel != null -> sovereignChannel
             else -> NOTIFICATION_CHANNEL_ID
         }
-        if (!hasCustomNotifications && !quiet) {
+        if (!hasCustomNotifications && !quiet && sovereignChannel == null) {
             createChannel(notificationChannelId, context.getString(R.string.channel_received_sms))
         }
 

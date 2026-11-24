@@ -151,11 +151,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            app:layout_constraintBottom_toTopOf="@id/message_holder"
+            app:layout_constraintBottom_toTopOf="@id/sovereign_guard_banner"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/thread_messages_fastscroller"
             tools:visibility="visible" />
+
+        <!-- Sovereign SMS: Pre-Send Draft Guard warning (advisory, never blocks sending) -->
+        <TextView
+            android:id="@+id/sovereign_guard_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFB300"
+            android:paddingHorizontal="@dimen/activity_margin"
+            android:paddingVertical="@dimen/small_margin"
+            android:textColor="#000000"
+            android:textSize="@dimen/smaller_text_size"
+            android:visibility="gone"
+            app:layout_constraintBottom_toTopOf="@id/message_holder"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/short_code_holder" />
 
         <include
             android:id="@+id/message_holder"

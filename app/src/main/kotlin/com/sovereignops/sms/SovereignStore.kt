@@ -2,7 +2,13 @@ package com.sovereignops.sms
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.sovereignops.sms.core.guard.GuardRule
+import com.sovereignops.sms.core.pack.Pack
+import com.sovereignops.sms.core.pack.PackCodec
+import com.sovereignops.sms.core.rules.Category
 import com.sovereignops.sms.core.rules.ConversationPolicy
+import com.sovereignops.sms.core.rules.WorkspaceMode
+import com.sovereignops.sms.core.templates.Template
 import com.sovereignops.sms.core.rules.RuleConfig
 import com.sovereignops.sms.core.rules.RuleConfigCodec
 import java.time.Instant
@@ -17,6 +23,7 @@ import java.time.ZoneId
 class SovereignStore(context: Context) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    private val sealed = SealedPrefs(context)
 
     /** Keep messages that block/keyword/unknown filters catch, instead of upstream's discard. */
     var preserveScreened: Boolean
@@ -52,6 +59,42 @@ class SovereignStore(context: Context) {
         prefs.edit().putLong("$KEY_LAST_ALERT$threadId", epochMillis).apply()
     }
 
+    /** User-assigned side of the SIM; null means "decide from contact status". */
+    fun category(threadId: Long): Category? =
+        prefs.getString("$KEY_CATEGORY$threadId", null)?.let { runCatching { Category.valueOf(it) }.getOrNull() }
+
+    fun setCategory(threadId: Long, category: Category?) {
+        prefs.edit().apply {
+            if (category == null) remove("$KEY_CATEGORY$threadId") else putString("$KEY_CATEGORY$threadId", category.name)
+        }.apply()
+    }
+
+    var workspaceMode: WorkspaceMode
+        get() = prefs.getString(KEY_MODE, null)?.let { runCatching { WorkspaceMode.valueOf(it) }.getOrNull() } ?: WorkspaceMode.ALL
+        set(value) = prefs.edit().putString(KEY_MODE, value.name).apply()
+
+    /** Draft-guard rules and templates live encrypted; both are empty until the user adds some. */
+    var guardRules: List<GuardRule>
+        get() = sealed.get(KEY_GUARD)?.let { PackCodec.decode(it).getOrNull()?.guard } ?: emptyList()
+        set(value) { sealed.put(KEY_GUARD, PackCodec.encode(Pack(guard = value))) }
+
+    var templates: List<Template>
+        get() = sealed.get(KEY_TEMPLATES)?.let { PackCodec.decode(it).getOrNull()?.templates } ?: emptyList()
+        set(value) { sealed.put(KEY_TEMPLATES, PackCodec.encode(Pack(templates = value))) }
+
+    fun exportPack(): String = PackCodec.encode(Pack(ruleConfig, guardRules, templates))
+
+    /** Replaces only the sections the file contains; returns an error message if rejected. */
+    fun importPack(json: String): String? = PackCodec.decode(json).fold(
+        onSuccess = { p ->
+            p.rules?.let { ruleConfig = it }
+            p.guard?.let { guardRules = it }
+            p.templates?.let { templates = it }
+            null
+        },
+        onFailure = { it.message ?: "Invalid file" },
+    )
+
     var heldCount: Int
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
@@ -63,5 +106,9 @@ class SovereignStore(context: Context) {
         private const val KEY_POLICY = "policy_"
         private const val KEY_LAST_ALERT = "last_alert_"
         private const val KEY_HELD = "held_count"
+        private const val KEY_CATEGORY = "category_"
+        private const val KEY_MODE = "workspace_mode"
+        private const val KEY_GUARD = "guard"
+        private const val KEY_TEMPLATES = "templates"
     }
 }

@@ -6,7 +6,12 @@ import android.widget.CheckBox
 import androidx.activity.result.contract.ActivityResultContracts
 import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.SovereignStore
+import com.sovereignops.sms.core.guard.DraftGuard
+import com.sovereignops.sms.core.guard.GuardText
+import com.sovereignops.sms.core.pack.Starters
 import com.sovereignops.sms.core.rules.Alert
+import com.sovereignops.sms.core.rules.Category
+import com.sovereignops.sms.core.templates.Templates
 import com.sovereignops.sms.core.rules.ConversationPolicy
 import com.sovereignops.sms.core.rules.IncomingMessage
 import com.sovereignops.sms.core.rules.RuleConfig
@@ -47,7 +52,7 @@ class SovereignSettingsActivity : SimpleActivity() {
     private val exportLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri == null) return@registerForActivityResult
         saveText()
-        runCatching { contentResolver.openOutputStream(uri)!!.use { it.write(store.exportRules().toByteArray()) } }
+        runCatching { contentResolver.openOutputStream(uri)!!.use { it.write(store.exportPack().toByteArray()) } }
             .onSuccess { toast(R.string.sv_exported) }
             .onFailure { toast(getString(R.string.sv_import_failed, it.message ?: "")) }
     }
@@ -55,7 +60,7 @@ class SovereignSettingsActivity : SimpleActivity() {
     private val importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) return@registerForActivityResult
         val text = runCatching { contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) } }.getOrNull()
-        val error = if (text == null) "unreadable file" else store.importRules(text)
+        val error = if (text == null) "unreadable file" else store.importPack(text)
         if (error == null) {
             toast(R.string.sv_imported)
             load()
@@ -104,6 +109,8 @@ class SovereignSettingsActivity : SimpleActivity() {
         loading = true
         binding.svPriority.setText(RuleText.formatAddresses(c.priorityAddresses))
         binding.svKeywords.setText(RuleText.formatKeywords(c.keywordRules))
+        binding.svGuard.setText(GuardText.format(store.guardRules))
+        binding.svTemplates.setText(Templates.format(store.templates))
         loading = false
         render()
     }
@@ -127,6 +134,11 @@ class SovereignSettingsActivity : SimpleActivity() {
         svQuietAction.text = alertName(c.quietHoursAction) +
             if (extra > 0) "\n" + getString(R.string.sv_extra_windows, extra) else ""
         svUnknownAction.text = alertName(c.unknownSenderAction)
+        svQuietPersonal.isChecked = Category.PERSONAL in c.quietHoursCategories
+        svOffDuty.text = alertName(c.offDutyAction)
+        val invalid = DraftGuard.check("", store.guardRules).invalid.map { it.name }
+        svGuardInvalid.text = getString(R.string.sv_guard_invalid, invalid.distinct().joinToString(", "))
+        svGuardInvalid.beVisibleIf(invalid.isNotEmpty())
         svCodes.isChecked = c.alertOneTimeCodes
         svCooldown.text = if (c.cooldownMinutes == 0) getString(R.string.sv_off) else getString(R.string.sv_minutes, c.cooldownMinutes)
         listOf(svQuietStartHolder, svQuietEndHolder, svDaysHolder).forEach { it.beVisibleIf(quietOn) }
@@ -197,9 +209,22 @@ class SovereignSettingsActivity : SimpleActivity() {
                 edit { it.copy(cooldownMinutes = m as Int) }
             }
         }
+        svQuietPersonalHolder.setOnClickListener {
+            svQuietPersonal.toggle()
+            edit {
+                val cats = if (svQuietPersonal.isChecked) it.quietHoursCategories + Category.PERSONAL else it.quietHoursCategories - Category.PERSONAL
+                it.copy(quietHoursCategories = cats)
+            }
+        }
+        svOffDutyHolder.setOnClickListener {
+            pickAlert(R.string.sv_off_duty_action, store.ruleConfig.offDutyAction, listOf(Alert.SILENT, Alert.HELD, Alert.ALERT)) { a ->
+                edit { it.copy(offDutyAction = a) }
+            }
+        }
+        svStartersHolder.setOnClickListener { addStarters() }
         svPreviewKnownHolder.setOnClickListener { svPreviewKnown.toggle() }
         svPreviewRunHolder.setOnClickListener { preview() }
-        svExportHolder.setOnClickListener { exportLauncher.launch("sovereign-sms-rules.json") }
+        svExportHolder.setOnClickListener { exportLauncher.launch("sovereign-sms-pack.json") }
         svImportHolder.setOnClickListener { importLauncher.launch(arrayOf("application/json", "text/plain")) }
     }
 
@@ -211,6 +236,25 @@ class SovereignSettingsActivity : SimpleActivity() {
         if (priority != c.priorityAddresses || keywords != c.keywordRules) {
             store.ruleConfig = c.copy(priorityAddresses = priority, keywordRules = keywords)
         }
+        val guard = GuardText.parse(binding.svGuard.text.toString())
+        if (guard != store.guardRules) store.guardRules = guard
+        val templates = Templates.parse(binding.svTemplates.text.toString())
+        if (templates != store.templates) store.templates = templates
+    }
+
+    /** Appends the neutral starter set to the text areas, disabled, for the user to review. */
+    private fun addStarters() {
+        saveText()
+        val c = store.ruleConfig
+        val haveKw = c.keywordRules.map { it.keyword.lowercase() }.toSet()
+        val kws = c.keywordRules + Starters.keywords.filter { it.keyword.lowercase() !in haveKw }
+        store.ruleConfig = c.copy(keywordRules = kws.mapIndexed { i, k -> k.copy(id = "k${i + 1}") })
+        val haveGuard = store.guardRules.map { it.name }.toSet()
+        store.guardRules = store.guardRules + Starters.guard.filter { it.name !in haveGuard }
+        val haveT = store.templates.map { it.title }.toSet()
+        store.templates = store.templates + Starters.templates.filter { it.title !in haveT }
+        load()
+        toast(R.string.sv_starters_added)
     }
 
     private fun preview() {
@@ -225,7 +269,9 @@ class SovereignSettingsActivity : SimpleActivity() {
         )
         val d = RuleEngine.evaluate(store.ruleConfig, message)
         val tags = if (d.tags.isEmpty()) "" else "\nTags: " + d.tags.sorted().joinToString(", ")
-        binding.svPreviewRun.text = alertName(d.alert) + " — " + d.explanation.joinToString("\n") + tags
+        val guard = DraftGuard.check(message.body, store.guardRules)
+        val guardText = if (guard.warn) "\nAs a draft: " + DraftGuard.summary(guard) else ""
+        binding.svPreviewRun.text = alertName(d.alert) + " — " + d.explanation.joinToString("\n") + tags + guardText
     }
 
     companion object {

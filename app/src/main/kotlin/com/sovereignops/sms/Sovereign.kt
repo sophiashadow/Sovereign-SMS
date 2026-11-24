@@ -13,6 +13,8 @@ import com.sovereignops.sms.core.rules.RuleEngine
 import com.sovereignops.sms.core.screening.Disposition
 import com.sovereignops.sms.core.screening.Screening
 import com.sovereignops.sms.core.screening.ScreeningInput
+import com.sovereignops.sms.core.workspace.ChannelKind
+import com.sovereignops.sms.core.workspace.Workspace
 import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.getMyContactsCursor
 import org.fossify.commons.extensions.isNumberBlocked
@@ -57,31 +59,38 @@ object Sovereign {
         }
     }
 
-    fun decide(context: Context, threadId: Long, address: String, body: String): Decision {
+    fun decide(context: Context, threadId: Long, address: String, body: String): Pair<Decision, ChannelKind> {
         val store = store(context)
+        val known = !isUnknownSender(context, address)
+        val category = Workspace.resolve(store.category(threadId), known)
         val message = IncomingMessage(
             address = address,
-            isKnownContact = !isUnknownSender(context, address),
+            isKnownContact = known,
             body = body,
             conversationPolicy = store.conversationPolicy(threadId),
             receivedAt = LocalDateTime.now(),
             lastAlertAt = store.lastAlertAt(threadId),
+            category = category,
+            workspaceMode = store.workspaceMode,
         )
-        return RuleEngine.evaluate(store.ruleConfig, message)
+        val decision = RuleEngine.evaluate(store.ruleConfig, message)
+        return decision to Workspace.channel(decision, category)
     }
 
     /**
      * Apply the rules to a stored message. [post] shows the upstream per-message
-     * notification; its argument is true for a quiet (no sound/vibration) post.
+     * notification: `quiet` is true for a silent post, `channel` is the Sovereign channel
+     * to use (null = upstream's own channel).
      */
-    fun announce(context: Context, threadId: Long, address: String, body: String, post: (quiet: Boolean) -> Unit) {
-        val decision = runCatching { decide(context, threadId, address, body) }.getOrNull()
-        when (decision?.alert ?: Alert.ALERT) { // any rules failure falls back to upstream behaviour
+    fun announce(context: Context, threadId: Long, address: String, body: String, post: (quiet: Boolean, channel: String?) -> Unit) {
+        val result = runCatching { decide(context, threadId, address, body) }.getOrNull()
+        val channel = result?.let { runCatching { SovereignNotifications.channel(context, it.second) }.getOrNull() }
+        when (result?.first?.alert ?: Alert.ALERT) { // any rules failure falls back to upstream behaviour
             Alert.ALERT -> {
                 store(context).markAlerted(threadId, System.currentTimeMillis())
-                post(false)
+                post(false, channel)
             }
-            Alert.SILENT -> post(true)
+            Alert.SILENT -> post(true, null)
             Alert.HELD -> SovereignNotifications.addHeld(context)
         }
     }
@@ -91,6 +100,25 @@ object SovereignNotifications {
     private const val QUIET_CHANNEL = "sovereign_quiet"
     private const val HELD_CHANNEL = "sovereign_held"
     private const val HELD_ID = 0x5050_0001
+
+    /** Per-category channels, so sound, vibration and lock-screen display are set per side in system settings. */
+    fun channel(context: Context, kind: ChannelKind): String {
+        if (kind == ChannelKind.QUIET) return quietChannel(context)
+        val (id, name, importance) = when (kind) {
+            ChannelKind.PERSONAL -> Triple("sovereign_personal", R.string.sv_channel_personal, NotificationManager.IMPORTANCE_HIGH)
+            ChannelKind.PROFESSIONAL -> Triple("sovereign_professional", R.string.sv_channel_professional, NotificationManager.IMPORTANCE_HIGH)
+            ChannelKind.UNKNOWN -> Triple("sovereign_unknown", R.string.sv_channel_unknown, NotificationManager.IMPORTANCE_DEFAULT)
+            ChannelKind.PRIORITY -> Triple("sovereign_priority", R.string.sv_channel_priority, NotificationManager.IMPORTANCE_HIGH)
+            ChannelKind.OTP -> Triple("sovereign_otp", R.string.sv_channel_otp, NotificationManager.IMPORTANCE_HIGH)
+            ChannelKind.QUIET -> error("handled above")
+        }
+        val ch = NotificationChannel(id, context.getString(name), importance).apply {
+            // Professional and unknown default to hiding content on the lock screen; the user can change it.
+            if (kind == ChannelKind.PROFESSIONAL || kind == ChannelKind.UNKNOWN) lockscreenVisibility = android.app.Notification.VISIBILITY_PRIVATE
+        }
+        context.getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
+        return id
+    }
 
     fun quietChannel(context: Context): String {
         val nm = context.getSystemService(NotificationManager::class.java)

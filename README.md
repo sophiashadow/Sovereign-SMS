@@ -8,7 +8,10 @@ It is a fork of **[Fossify Messages](https://github.com/FossifyOrg/Messages)** 1
 
 - **Screened messages are kept.** Upstream deletes messages from blocked numbers, blocked keywords and unknown senders. Sovereign SMS stores them as read and archived instead, so nothing is lost. You can turn this off.
 - **Local notification rules.** These include quiet hours, focus mode, priority numbers and conversations, muted conversations, unknown-sender handling, keyword rules with tags, a cooldown, and always alerting for one-time codes. Rules only change how a message is announced. They never affect whether it is stored. Each decision comes with an explanation, and you can test rules against a sample message before relying on them.
-- **Portable rules.** You can export and import your rules as a JSON file.
+- **Workspace modes.** A bar above the inbox switches between All, Personal, Professional and Focus. Each category has its own notification channel, and quiet hours can leave personal contacts ringing through.
+- **Draft guard.** You write your own keyword or regex rules (empty by default, stored encrypted). A matching draft shows a warning above the composer. It never blocks sending.
+- **Response library.** Your own templates, inserted at the cursor. Inserting never sends.
+- **Portable packs.** Rules, guard and templates export and import as one JSON file. A blank starting point is in [docs/owner-rules.template.json](docs/owner-rules.template.json). Neutral starter patterns are included and start switched off.
 - **Its own identity.** It uses the app ID `com.sovereignops.sms`, so it installs alongside your current messenger. App data is excluded from Android cloud backup.
 
 The state of each feature is in [docs/STATUS.md](docs/STATUS.md).
@@ -29,7 +32,7 @@ See [docs/BUILD.md](docs/BUILD.md).
 
 ## Install and roll back
 
-Read [docs/INSTALL_AND_ROLLBACK.md](docs/INSTALL_AND_ROLLBACK.md) before making it your default SMS app.
+Read [docs/INSTALL_AND_ROLLBACK.md](docs/INSTALL_AND_ROLLBACK.md) and, on Samsung, [docs/DEPLOY_SAMSUNG_ONEUI.md](docs/DEPLOY_SAMSUNG_ONEUI.md) before making it your default SMS app. Turn off RCS first.
 
 ## Licence
 

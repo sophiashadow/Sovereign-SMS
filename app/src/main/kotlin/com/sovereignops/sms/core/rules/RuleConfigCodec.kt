@@ -57,6 +57,8 @@ internal data class RuleConfigDoc(
     val focusUntil: String? = null,
     val focusAction: String = Alert.HELD.name,
     val alertOneTimeCodes: Boolean = true,
+    val quietHoursCategories: List<String> = Category.entries.map { it.name },
+    val offDutyAction: String = Alert.SILENT.name,
 ) {
     fun toConfig() = RuleConfig(
         enabled = enabled,
@@ -76,6 +78,8 @@ internal data class RuleConfigDoc(
         focusUntil = focusUntil?.let(LocalDateTime::parse),
         focusAction = Alert.valueOf(focusAction),
         alertOneTimeCodes = alertOneTimeCodes,
+        quietHoursCategories = quietHoursCategories.map { Category.valueOf(it) }.toSet(),
+        offDutyAction = Alert.valueOf(offDutyAction),
     )
 
     companion object {
@@ -96,6 +100,8 @@ internal data class RuleConfigDoc(
             focusUntil = c.focusUntil?.toString(),
             focusAction = c.focusAction.name,
             alertOneTimeCodes = c.alertOneTimeCodes,
+            quietHoursCategories = c.quietHoursCategories.map { it.name }.sorted(),
+            offDutyAction = c.offDutyAction.name,
         )
     }
 }

@@ -28,6 +28,16 @@ enum class Alert {
 /** Per-conversation notification preference chosen by the user. */
 enum class ConversationPolicy { DEFAULT, PRIORITY, MUTED }
 
+/** Which side of a shared SIM a conversation belongs to. Assigned per thread by the user. */
+enum class Category { PERSONAL, PROFESSIONAL, UNKNOWN }
+
+/**
+ * The inbox view the user has chosen. It also shapes alerts:
+ * FOCUS holds everything except priority and one-time codes; PERSONAL (off duty)
+ * applies [RuleConfig.offDutyAction] to professional and unknown conversations.
+ */
+enum class WorkspaceMode { ALL, PERSONAL, PROFESSIONAL, FOCUS }
+
 enum class KeywordEffect {
     /** Tag only. */
     NONE,
@@ -42,7 +52,7 @@ enum class KeywordEffect {
 /** Identifies which rule decided, so the UI can explain and the user can reverse it. */
 enum class RuleId {
     RULES_OFF, PRIORITY_CONTACT, CONVERSATION_PRIORITY, CONVERSATION_MUTED, ONE_TIME_CODE,
-    KEYWORD_PRIORITY, FOCUS, QUIET_HOURS, UNKNOWN_SENDER, KEYWORD_SILENT, COOLDOWN, DEFAULT,
+    KEYWORD_PRIORITY, FOCUS, WORKSPACE_FOCUS, OFF_DUTY, QUIET_HOURS, UNKNOWN_SENDER, KEYWORD_SILENT, COOLDOWN, DEFAULT,
 }
 
 /**
@@ -93,6 +103,10 @@ data class RuleConfig(
     val focusUntil: LocalDateTime? = null,
     val focusAction: Alert = Alert.HELD,
     val alertOneTimeCodes: Boolean = true,
+    /** Categories quiet hours apply to; drop PERSONAL so personal contacts ring through. */
+    val quietHoursCategories: Set<Category> = Category.entries.toSet(),
+    /** In PERSONAL workspace mode, what happens to professional and unknown messages. */
+    val offDutyAction: Alert = Alert.SILENT,
 )
 
 data class IncomingMessage(
@@ -103,6 +117,8 @@ data class IncomingMessage(
     val receivedAt: LocalDateTime,
     /** When this conversation last produced an audible alert, if known. */
     val lastAlertAt: LocalDateTime?,
+    val category: Category = if (isKnownContact) Category.PERSONAL else Category.UNKNOWN,
+    val workspaceMode: WorkspaceMode = WorkspaceMode.ALL,
 )
 
 data class Decision(
@@ -164,7 +180,13 @@ object RuleEngine {
                 candidates += Triple(RuleId.FOCUS, config.focusAction, "Focus mode until ${until.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))}")
             }
         }
-        config.quietHours.firstOrNull { it.contains(t) }?.let {
+        if (message.workspaceMode == WorkspaceMode.FOCUS) {
+            candidates += Triple(RuleId.WORKSPACE_FOCUS, config.focusAction, "Workspace is in Focus mode")
+        }
+        if (message.workspaceMode == WorkspaceMode.PERSONAL && message.category != Category.PERSONAL) {
+            candidates += Triple(RuleId.OFF_DUTY, config.offDutyAction, "Personal mode: ${message.category.name.lowercase()} conversation")
+        }
+        config.quietHours.firstOrNull { it.contains(t) && message.category in config.quietHoursCategories }?.let {
             candidates += Triple(RuleId.QUIET_HOURS, config.quietHoursAction, "Quiet hours ${it.describe()}")
         }
         if (!message.isKnownContact && config.unknownSenderAction != Alert.ALERT) {

@@ -32,5 +32,5 @@ Then test by receiving one message from a person or number you control.
 ## 4. Roll back
 
 1. Settings → Apps → Default apps → SMS app → choose your previous messenger. Messages live in the system provider, so they stay where they are and your old app sees them.
-2. Optional: export your Sovereign rules (Settings → Sovereign SMS → Export rules), then uninstall with `adb uninstall com.sovereignops.sms.debug`. Uninstalling removes only Sovereign settings, rules and per-conversation flags. Conversations Sovereign archived stay archived in the provider. Unarchive them first if you want them back in the inbox of an app that hides archived threads.
+2. Optional: export your Sovereign rules (Settings → Sovereign SMS → Export pack), then uninstall with `adb uninstall com.sovereignops.sms.debug`. Uninstalling removes only Sovereign settings, rules and per-conversation flags. Conversations Sovereign archived stay archived in the provider. Unarchive them first if you want them back in the inbox of an app that hides archived threads.
 3. Turn RCS back on in your previous app if you switched it off.

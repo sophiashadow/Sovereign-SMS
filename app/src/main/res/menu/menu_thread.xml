@@ -41,6 +41,16 @@
         app:showAsAction="never" />
     <!-- Sovereign SMS -->
     <item
+        android:id="@+id/sovereign_insert_template"
+        android:showAsAction="never"
+        android:title="@string/sv_insert_template"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/sovereign_category"
+        android:showAsAction="never"
+        android:title="@string/sv_category"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/sovereign_policy"
         android:showAsAction="never"
         android:title="@string/sv_policy"
