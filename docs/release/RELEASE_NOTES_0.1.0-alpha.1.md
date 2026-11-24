@@ -44,4 +44,46 @@ This is the first Sovereign release, so there is nothing to upgrade from. Later 
 
 ## Verification
 
-VERIFICATION_PLACEHOLDER
+All checks were local, in a Linux build container with JDK 21 and build-tools 36.0.0, on 2026-11-24. **No emulator, device or carrier test has been run** (no `/dev/kvm`). CI was not run: Actions is not set up for this repository.
+
+| Check | Command | Result |
+|---|---|---|
+| JVM unit tests | `./gradlew testFossDebugUnitTest` | **171 tests, 0 failures, 0 errors** |
+| Lint | `./gradlew lintFossDebug` | 0 errors outside the upstream baseline; 45 warnings in Sovereign code, classified below |
+| Debug build | `./gradlew assembleFossDebug` | built, 40,797,099 bytes, `com.sovereignops.sms.debug` |
+| Release build | `./gradlew clean assembleFossRelease`, signed with a **throwaway key** | built, 15,017,449 bytes |
+| Release APK SHA-256 | `sha256sum` | `a3ea2aee1f3f91ecc4c5a7c004ffa2b7c0b9312c0aa8ddb264080779a32d2b1d` (throwaway-signed; **not a release**) |
+| Reproducibility | two `clean assembleFossRelease` runs at `fd849a11`, same machine and key | byte-identical SHA-256. Rebuilt again at the commit holding these notes (docs only changed): see the `SHA256SUMS` header. Not tested across machines or JDKs |
+| APK checks | `scripts/verify-apk.sh APK --cert <throwaway>` | PASS: apksigner (v2, 1 signer), certificate pin, package `com.sovereignops.sms`, versionCode 1, versionName 0.1.0-alpha.1, not debuggable, no INTERNET, `zipalign -P 16`, ELF LOAD 16 KB on all 8 native libraries. Without `--cert`: certificate pin **NOT_RUN** (no production fingerprint yet) |
+| Upgrade check | `verify-apk.sh A.apk --previous B.apk` | FAIL as expected (same versionCode 1 → 1); package and certificate PASS |
+| Merged manifest | `aapt2 dump permissions`, `aapt2 dump xmltree` | 16 permissions, all inherited from upstream (table in `SECURITY_REVIEW.md`); `allowBackup=false`; `MmsReceiver` not exported; exported components match `SECURITY_REVIEW.md` |
+| Secret and personal-data scan | `git grep` of tracked files for key material, signing passwords, the session's throwaway password, email addresses and non-555 phone numbers in Sovereign files | none found (upstream's `keystore.properties_sample` placeholders only) |
+| Licences | `LICENSE` files read at pinned versions | IndicatorFastScroll corrected to MIT; MIT, BSD-2-Clause and W3C texts now ship in the APK (`NoticesTest`). See `PROVENANCE.md` |
+| Dependency CVEs | — | **NOT_RUN** (osv.dev unreachable from the container) |
+
+**Lint warnings in Sovereign code (45), by severity.** None is a defect, so none was changed.
+
+| Count | Rule | Severity | Assessment |
+|---|---|---|---|
+| 27 | UseKtx | style | Suggests KTX helpers; behaviour identical |
+| 9 | SetTextI18n | low | Text joined in code. Sovereign strings are English only (a known limitation) |
+| 6 | PluralsCandidate | cosmetic | "1 messages" style wording in counts |
+| 1 | ApplySharedPref (`Vault.kt` set-aside) | none | Deliberate `commit()`: the old wrapped key must be on disk before a new vault is created |
+| 1 | TooManyViews (Sovereign settings layout) | low | Performance of one long settings screen |
+| 1 | TypographyDashes | cosmetic | Hyphen in a time-range hint |
+
+**Fixed during this pass:**
+
+- `verify-apk.sh` exited silently when the pin file held no fingerprint, and misread the package name from `aapt2` output.
+- `release-artifacts.sh` took release notes and LICENSE from the working tree instead of the named commit.
+- The settings-pack export was labelled "Export everything".
+- Settings-pack import replaced sections without asking and left a stale flag cache.
+
+**Artifacts.** `scripts/release-artifacts.sh APK` writes `dist/0.1.0-alpha.1/` (not committed):
+
+- the APK;
+- the GPL-3.0 source archive;
+- notices, licences, these notes and `LICENSE`;
+- `SHA256SUMS`, whose header names the commit.
+
+The throwaway-signed APK in that folder is evidence for the build, not something to install and keep. The owner rebuilds and signs with the permanent key ([BUILD_AND_SIGNING.md](../BUILD_AND_SIGNING.md) §3), and that APK's SHA-256 becomes the release checksum.

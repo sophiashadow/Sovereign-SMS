@@ -40,7 +40,8 @@ norm() { tr -d ': ' | tr 'A-F' 'a-f'; }
 
 signer() { "$APKSIGNER" verify --print-certs "$1" 2>/dev/null | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -1 | norm; }
 badging() { "$AAPT2" dump badging "$1" 2>/dev/null; }
-field() { badging "$1" | sed -n "s/^package: .*$2='\([^']*\)'.*/\1/p" | head -1; }
+# The space before the name matters: "compileSdkVersionCodename='16'" also ends in name=.
+field() { badging "$1" | sed -n "s/^package:.* $2='\([^']*\)'.*/\1/p" | head -1; }
 
 echo "APK      $apk"
 echo "SHA-256  $(sha256sum "$apk" | cut -d' ' -f1)"
@@ -49,11 +50,11 @@ echo "Size     $(stat -c %s "$apk") bytes"
 if "$APKSIGNER" verify --verbose "$apk" >/dev/null 2>&1; then ok "apksigner verify"; else bad "apksigner verify"; fi
 digest="$(signer "$apk")"
 echo "Signer   ${digest:-none}"
-[ -z "$cert" ] && [ -f "$root/docs/release/SIGNING_CERT_SHA256" ] && cert="$(grep -v '^#' "$root/docs/release/SIGNING_CERT_SHA256" | head -1)"
+[ -z "$cert" ] && [ -f "$root/docs/release/SIGNING_CERT_SHA256" ] && cert="$(grep -v -e '^#' -e '^[[:space:]]*$' "$root/docs/release/SIGNING_CERT_SHA256" | head -1 || true)"
 if [ -n "$cert" ]; then
   if [ "$digest" = "$(echo "$cert" | norm)" ]; then ok "signing certificate matches the pinned digest"; else bad "signing certificate does not match the pinned digest"; fi
 else
-  echo "NOT_RUN  certificate pin (no --cert and no docs/release/SIGNING_CERT_SHA256)"
+  echo "NOT_RUN  certificate pin (no --cert, and docs/release/SIGNING_CERT_SHA256 holds no fingerprint)"
 fi
 signers="$("$APKSIGNER" verify --print-certs "$apk" 2>/dev/null | grep -c '^Signer #[0-9]* certificate DN' || true)"
 [ "$signers" = "1" ] && ok "exactly one signer" || bad "signer count is $signers"
