@@ -320,4 +320,10 @@
     <string name="sv_check_note">Nothing was changed. Duplicates are not merged. Copy report copies only the text above, which holds no numbers, names or messages.</string>
     <string name="sv_copy_report">Copy report</string>
     <string name="sv_check_failed">Couldn\'t read Android\'s message store. Sovereign SMS may not be the default SMS app.</string>
+    <string name="sv_start_sms_fallback">Start SMS/MMS</string>
+    <string name="sv_own_numbers">My phone number(s)</string>
+    <string name="sv_own_numbers_summary">Optional fallback when your SIM doesn\'t report your number (prevents split group MMS)</string>
+    <string name="sv_own_numbers_hint">Comma-separated numbers, e.g. +19195550100</string>
+    <string name="sv_own_numbers_saved">Own number(s) updated</string>
+    <string name="sv_cover_blocked_thread">Quick Cover is on. Unlock to open this conversation.</string>
 </resources>

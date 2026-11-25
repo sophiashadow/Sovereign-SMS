@@ -7,12 +7,15 @@ import android.provider.Telephony.MmsSms
 import android.provider.Telephony.Threads
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
+import android.widget.EditText
 import androidx.core.net.toUri
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.core.address.AuditThread
 import com.sovereignops.sms.core.address.ThreadAudit
 import org.fossify.commons.extensions.copyToClipboard
+import org.fossify.commons.extensions.toast
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.messages.R
 
@@ -63,7 +66,27 @@ object SovereignAddresses {
                 runCatching { tm?.createForSubscriptionId(s.subscriptionId)?.line1Number }.getOrNull()?.let(out::add)
             }
         }
+        out.addAll(Sovereign.store(context).ownNumbers)
         return out.filter { it.isNotBlank() }.distinct()
+    }
+
+    fun editOwnNumbers(activity: FragmentActivity) {
+        val store = Sovereign.store(activity)
+        val input = EditText(activity).apply {
+            hint = activity.getString(R.string.sv_own_numbers_hint)
+            setText(store.ownNumbers.joinToString(", "))
+            setPadding(48, 32, 48, 24)
+        }
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.sv_own_numbers)
+            .setMessage(R.string.sv_own_numbers_summary)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                store.ownNumbers = input.text?.toString().orEmpty().split(",")
+                activity.toast(R.string.sv_own_numbers_saved)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     fun showCheck(activity: FragmentActivity) = ensureBackgroundThread {

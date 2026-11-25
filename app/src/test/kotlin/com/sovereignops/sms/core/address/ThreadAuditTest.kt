@@ -55,5 +55,6 @@ class ThreadAuditTest {
         val text = ThreadAudit.render(r)
         for (s in listOf("555", "0142", "3f2a", self)) assertFalse("leaked $s", text.contains(s))
         assertTrue(text.contains("#21"))
+        assertTrue(text.contains("turn off RCS chats"))
     }
 }

@@ -260,6 +260,15 @@ class ThreadActivity : SimpleActivity() {
         }
 
         threadId = intent.getLongExtra(THREAD_ID, 0L)
+        if (com.sovereignops.sms.ui.SovereignInbox.isThreadHiddenByCover(this, threadId)) {
+            com.sovereignops.sms.SovereignCover.turnOff(
+                activity = this,
+                onCancel = {
+                    toast(R.string.sv_cover_blocked_thread)
+                    finish()
+                },
+            )
+        }
         intent.getStringExtra(THREAD_TITLE)?.let {
             binding.threadToolbar.title = it
         }
@@ -1073,10 +1082,28 @@ class ThreadActivity : SimpleActivity() {
             binding.shortCodeHolder.replyDisabledInfo.apply {
                 applyColorFilter(textColor)
                 setOnClickListener {
-                    InvalidNumberDialog(
-                        activity = this@ThreadActivity,
-                        text = getString(if (sovereignUnsupported) R.string.sv_unsupported_thread_desc else R.string.invalid_short_code_desc)
-                    )
+                    val sendable = participants.getAddresses()
+                        .filter(com.sovereignops.sms.core.address.AddressClassifier::isSendable)
+                        .distinct()
+                    if (sovereignUnsupported && sendable.isNotEmpty()) {
+                        com.google.android.material.dialog.MaterialAlertDialogBuilder(this@ThreadActivity)
+                            .setMessage(R.string.sv_unsupported_thread_desc)
+                            .setPositiveButton(R.string.sv_start_sms_fallback) { _, _ ->
+                                val number = if (sendable.size == 1) sendable.first() else com.google.gson.Gson().toJson(sendable.toSet())
+                                Intent(this@ThreadActivity, ThreadActivity::class.java).apply {
+                                    putExtra(THREAD_ID, getThreadId(sendable.toSet()))
+                                    putExtra(THREAD_NUMBER, number)
+                                    startActivity(this)
+                                }
+                            }
+                            .setNegativeButton(android.R.string.ok, null)
+                            .show()
+                    } else {
+                        InvalidNumberDialog(
+                            activity = this@ThreadActivity,
+                            text = getString(if (sovereignUnsupported) R.string.sv_unsupported_thread_desc else R.string.invalid_short_code_desc)
+                        )
+                    }
                 }
                 tooltipText = getString(org.fossify.commons.R.string.more_info)
             }

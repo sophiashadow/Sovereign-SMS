@@ -556,7 +556,13 @@ class MainActivity : SimpleActivity() {
         searchedText: String,
     ) {
         val searchResults = ArrayList<SearchResult>()
-        conversations.forEach { conversation ->
+        val visibleConversations = conversations.filterNot {
+            com.sovereignops.sms.ui.SovereignInbox.isThreadHiddenByCover(this, it.threadId, it.phoneNumber)
+        }
+        val visibleMessages = messages.filterNot {
+            com.sovereignops.sms.ui.SovereignInbox.isThreadHiddenByCover(this, it.threadId)
+        }
+        visibleConversations.forEach { conversation ->
             val date = (conversation.date * 1000L).formatDateOrTime(
                 context = this,
                 hideTimeOnOtherDays = true,
@@ -574,7 +580,7 @@ class MainActivity : SimpleActivity() {
             searchResults.add(searchResult)
         }
 
-        messages.sortedByDescending { it.id }.forEach { message ->
+        visibleMessages.sortedByDescending { it.id }.forEach { message ->
             var recipient = message.senderName
             if (recipient.isEmpty() && message.participants.isNotEmpty()) {
                 val participantNames = message.participants.map { it.name }
