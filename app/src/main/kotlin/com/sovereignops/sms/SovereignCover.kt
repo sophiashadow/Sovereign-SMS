@@ -31,7 +31,7 @@ object SovereignCover {
     }
 
     /** Re-authenticate, then leave cover and call [done]. Without a device lock it just leaves. */
-    fun turnOff(activity: FragmentActivity, done: () -> Unit = {}) {
+    fun turnOff(activity: FragmentActivity, onCancel: () -> Unit = {}, done: () -> Unit = {}) {
         val auth = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
         val leave = {
             Sovereign.store(activity).coverActive = false
@@ -45,6 +45,7 @@ object SovereignCover {
         }
         val prompt = BiometricPrompt(activity, ContextCompat.getMainExecutor(activity), object : BiometricPrompt.AuthenticationCallback() {
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) = leave()
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) = onCancel()
         })
         prompt.authenticate(
             BiometricPrompt.PromptInfo.Builder()

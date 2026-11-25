@@ -73,6 +73,7 @@ object ThreadAudit {
             appendLine("Threads with an unrecognized address: ${r.unrecognized.size}")
             r.unrecognized.forEach { appendLine("  #${it.threadId}: ${it.participants} participant(s); ${it.shapes.joinToString("; ")}") }
             appendLine("Shapes: " + r.shapes.entries.sortedByDescending { it.value }.joinToString("; ") { "${it.key} ×${it.value}" })
+            appendLine("Tip: if these are RCS chats from another app, turn off RCS chats there so new replies arrive as SMS/MMS.")
         }
         if (r.possibleDuplicates.isEmpty()) {
             appendLine("Possible duplicate threads: none")

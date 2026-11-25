@@ -1,12 +1,14 @@
 package com.sovereignops.sms.ui
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.chip.ChipGroup
 import com.sovereignops.sms.QuickCoverTile
 import com.sovereignops.sms.Sovereign
 import com.sovereignops.sms.SovereignCover
+import com.sovereignops.sms.core.rules.Category
 import com.sovereignops.sms.core.rules.WorkspaceMode
 import com.sovereignops.sms.core.workspace.Workspace
 import com.sovereignops.sms.vault.VaultCache
@@ -76,5 +78,15 @@ object SovereignInbox {
             policy = { c -> store.conversationPolicy(c.threadId) },
             quarantined = { c -> VaultCache.isQuarantined(c.phoneNumber) },
         )
+    }
+
+    /** True when Quick Cover is active and [threadId] resolves to Professional or Quarantine. */
+    fun isThreadHiddenByCover(context: Context, threadId: Long, phoneNumber: String = ""): Boolean {
+        val store = Sovereign.store(context)
+        if (!store.coverActive || threadId <= 0L) return false
+        if (phoneNumber.isNotEmpty() && VaultCache.isQuarantined(phoneNumber)) return true
+        val hasCard = VaultCache.card(threadId) != null
+        val explicit = store.category(threadId)
+        return explicit == Category.PROFESSIONAL || (explicit == null && hasCard)
     }
 }

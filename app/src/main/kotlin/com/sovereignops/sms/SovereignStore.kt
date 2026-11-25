@@ -193,6 +193,21 @@ class SovereignStore(context: Context) {
         get() = prefs.getInt(KEY_HELD, 0)
         set(value) = prefs.edit().putInt(KEY_HELD, value.coerceAtLeast(0)).apply()
 
+    /** Optional user-supplied own numbers (encrypted) when SIM/eSIM omits line1Number. */
+    var ownNumbers: List<String>
+        get() = sealed.get(KEY_OWN_NUMBERS)
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.filter { com.sovereignops.sms.core.address.AddressClassifier.isPhoneLike(it) }
+            ?.distinct()
+            ?: emptyList()
+        set(value) {
+            val clean = value.map { it.trim() }
+                .filter { com.sovereignops.sms.core.address.AddressClassifier.isPhoneLike(it) }
+                .distinct()
+            sealed.put(KEY_OWN_NUMBERS, clean.joinToString(","))
+        }
+
     companion object {
         const val PREFS = "sovereign_sms"
         private const val KEY_LEDGER_UNIT = "ledger_unit_term"
@@ -221,5 +236,6 @@ class SovereignStore(context: Context) {
         private const val KEY_SUM_MINUTE = "summary_minute"
         private const val KEY_SUM_DAYS = "summary_days"
         private const val KEY_SUM_LAST = "summary_last_day"
+        private const val KEY_OWN_NUMBERS = "own_numbers"
     }
 }
