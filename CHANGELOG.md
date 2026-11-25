@@ -6,7 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [Sovereign 0.1.0-alpha.1] - unreleased (proposed tag `v0.1.0-alpha.1`)
+## [Sovereign 0.1.0-alpha.2] - unreleased (proposed tag `v0.1.0-alpha.2`)
+Stabilization after the owner's first use on a phone. No new features. Details and root causes: `docs/GROUP_CONVERSATIONS.md`.
+
+### Fixed
+- Conversations titled with another app's chat ID or another opaque string. Unrecognized addresses are now counted ("Ashford, 1 unrecognized address", "Unsupported conversation"), and blank addresses no longer leave empty names.
+- Unrecognized addresses could be used as SMS destinations (digit-only IDs and blank addresses passed the letters check). Every send path now refuses the whole send and keeps the draft or scheduled message.
+- A notification reply in a group thread went to the sender alone, starting a separate one-to-one thread. Group threads no longer offer an inline reply.
+- Rule and card matching could match digits inside an opaque ID to a real number.
+- A one-to-one thread with an unrecognized address counted as a known sender in workspace filtering.
+
+### Added
+- Settings → Sovereign → Check conversations: a read-only report of unrecognized addresses (shape only), possible duplicate threads and own-number status. It never merges.
+- Rename is also offered for one-to-one threads with an unrecognized address.
+
+## [Sovereign 0.1.0-alpha.1] - not released; superseded by 0.1.0-alpha.2
 First Sovereign SMS alpha, forked from Fossify Messages 1.10.3. Not yet tested on a device; see `docs/KNOWN_LIMITATIONS.md`.
 
 ### Added

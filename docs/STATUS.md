@@ -1,11 +1,11 @@
 # Feature status register
 
-Updated 2026-11-24. Each label is claimed only with its own evidence:
+Updated 2026-11-25. Each label is claimed only with its own evidence:
 
 - **implemented**: code is in the repo.
 - **compiled**: `assembleFossDebug` succeeded (and, from Slice F, `assembleFossRelease`).
 - **tested**: JVM unit tests pass.
-- **device**: verified on a phone. **Nothing has reached this state yet.**
+- **device**: verified on a phone. **Nothing has reached this state yet.** The owner's first use of alpha.1 on a phone (2026-11-25) found the group-title and split-thread defects fixed below; that is a defect report, not a passed check.
 
 | Area | Feature | State |
 |---|---|---|
@@ -65,8 +65,13 @@ Updated 2026-11-24. Each label is claimed only with its own evidence:
 | F | Shipped notices: Settings → Open-source notices from `assets/licenses/`: SQLCipher BSD-3-Clause, LibTomCrypt, IndicatorFastScroll MIT, ez-vcard BSD-2-Clause, W3C (mmslib SMIL), Apache-2.0, with an index | tested (NoticesTest: screen list matches the folder, index names each file); screen compiled |
 | F | R8 keep rules (SQLCipher, MMS), `Log.v/d/i` stripped in release, screen-off receiver `RECEIVER_NOT_EXPORTED` | release compiled; no device run |
 | F | Unencrypted-export warnings: thread ZIP, settings pack, ledger CSV/Markdown, upstream message export. Warns, never blocks | compiled |
-| F | Signed release APK `com.sovereignops.sms` 0.1.0-alpha.1 (versionCode 1) | built and checked by `scripts/verify-apk.sh` with a **throwaway test key** (not kept); 16 KB `zipalign -P 16` and ELF 0x4000 verified. Owner-key signing not done |
+| F | Signed release APK `com.sovereignops.sms` 0.1.0-alpha.2 (versionCode 2) | built and checked by `scripts/verify-apk.sh` with a **throwaway test key**; see the alpha.2 release notes. Owner-key signing not done |
+| S | Address classification: phone number, short code, email, sender name, URI, opaque, empty (`AddressClassifier`) | tested (AddressClassifierTest 12) |
+| S | Unrecognized addresses never used as a destination: every send path refuses the whole send; composer hidden with an explanation; draft and scheduled message kept | classifier tested; send paths compiled |
+| S | Fallback titles ("Ashford, 1 unrecognized address", "Unsupported conversation"); blank addresses counted; rename also offered for one-to-one threads with an unrecognized address | tested (ThreadTitleTest 8); wiring compiled |
+| S | No inline notification reply in group threads (it went to the sender alone) | compiled |
+| S | Check conversations: read-only, shape-only report of unrecognized addresses, possible duplicate threads and own-number status; never merges | tested (ThreadAuditTest 7); dialog compiled |
 | F | Release tooling: `scripts/verify-apk.sh` (signature, signer pin, package, debuggable, INTERNET, alignment, `--previous` upgrade check), `scripts/release-artifacts.sh` (APK, GPL source archive, notices, SHA256SUMS); owner signing workflow in `BUILD_AND_SIGNING.md` | scripts run locally on the throwaway-signed APK |
 | F | Android 17 / One UI audit (`ANDROID17_ONEUI_AUDIT.md`) and release security review (`SECURITY_REVIEW.md`) | written; 3 open device questions |
 
-Test command: `./gradlew testFossDebugUnitTest`. The last run (2026-11-24, this commit's tree) had 171 tests with 0 failures and 0 errors; `lintFossDebug` reported 0 errors outside the upstream baseline.
+Test command: `./gradlew testFossDebugUnitTest`. The last run (2026-11-25, this commit's tree) had 198 tests with 0 failures and 0 errors; `lintFossDebug` reported 0 errors outside the upstream baseline.

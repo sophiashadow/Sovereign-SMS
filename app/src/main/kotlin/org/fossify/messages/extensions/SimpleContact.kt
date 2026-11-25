@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.ContactsContract
-import android.text.TextUtils
 import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
 import org.fossify.commons.helpers.SimpleContactsHelper
@@ -12,7 +11,8 @@ import org.fossify.commons.models.SimpleContact
 import androidx.core.net.toUri
 
 fun ArrayList<SimpleContact>.getThreadTitle(): String {
-    return TextUtils.join(", ", map { it.name }.toTypedArray()).orEmpty()
+    // Sovereign SMS: unrecognized addresses are counted, not shown verbatim.
+    return com.sovereignops.sms.core.address.ThreadTitle.build(map { it.phoneNumbers.firstOrNull()?.normalizedNumber to it.name })
 }
 
 fun ArrayList<SimpleContact>.getAddresses(): List<String> {

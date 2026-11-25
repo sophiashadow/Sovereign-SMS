@@ -1,6 +1,6 @@
 # Known limitations
 
-As of 2026-11-24, for v0.1.0-alpha.1. The status of each feature is in [STATUS.md](STATUS.md).
+As of 2026-11-25, for v0.1.0-alpha.2. The status of each feature is in [STATUS.md](STATUS.md).
 
 ## Testing
 
@@ -14,6 +14,10 @@ As of 2026-11-24, for v0.1.0-alpha.1. The status of each feature is in [STATUS.m
 
 - Ordinary SMS and MMS are **not end-to-end encrypted**. The carrier, and anyone with access to the carrier network or the phone, can read them. Sovereign's encryption covers only its own records (vault, settings, `.sovbak`).
 - No RCS. With Sovereign as the default SMS app, RCS chats in your previous messenger stop. Turn RCS off before switching ([INSTALL_AND_ROLLBACK.md](INSTALL_AND_ROLLBACK.md)).
+- Conversations another app left in Android's message store with a non-SMS address, often an RCS chat ID, are shown as "Unsupported conversation" or "…, 1 unrecognized address". They can be read and renamed, but not replied to. Details: [GROUP_CONVERSATIONS.md](GROUP_CONVERSATIONS.md).
+- When Android doesn't know this phone's number, incoming group MMS can list you as a participant and land in a separate thread, and replying there also sends to you. This is upstream `mmslib` behaviour. Check conversations reports it; nothing merges threads.
+- Groups sent as separate SMS ("Send group messages as MMS" off) get their replies in one-to-one threads. That is by design.
+- Notification inline reply is off for group threads. Open the thread to reply to everyone.
 - *Inference:* numbers on Android's own block list may be dropped before any app sees them. Sovereign's Quarantine list is the preserving alternative.
 - Android 17 holds SMS in WebOTP or SMS Retriever format back from other apps for 3 hours. Whether the default SMS role holder is exempt is a device question ([ANDROID17_ONEUI_AUDIT.md](ANDROID17_ONEUI_AUDIT.md)).
 
@@ -56,4 +60,4 @@ As of 2026-11-24, for v0.1.0-alpha.1. The status of each feature is in [STATUS.m
 
 ## Sizes (this build)
 
-The figures are in the [release notes](release/RELEASE_NOTES_0.1.0-alpha.1.md).
+The figures are in the [release notes](release/RELEASE_NOTES_0.1.0-alpha.2.md).

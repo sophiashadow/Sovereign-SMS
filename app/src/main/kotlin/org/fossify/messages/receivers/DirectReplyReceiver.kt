@@ -39,7 +39,7 @@ class DirectReplyReceiver : BroadcastReceiver() {
             ensureBackgroundThread {
                 var messageId = 0L
                 try {
-                    context.sendMessageCompat(body, listOf(address), subscriptionId, emptyList())
+                    if (!context.sendMessageCompat(body, listOf(address), subscriptionId, emptyList())) return@ensureBackgroundThread // Sovereign SMS
                     val message = context.getMessages(
                         threadId = threadId, includeScheduledMessages = false, limit = 1
                     ).lastOrNull()

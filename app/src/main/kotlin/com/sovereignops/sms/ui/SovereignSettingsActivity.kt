@@ -326,6 +326,7 @@ class SovereignSettingsActivity : SimpleActivity() {
         }
         svTraceHolder.setOnClickListener { showTrace() }
         svInsightsHolder.setOnClickListener { showInsights() }
+        svCheckHolder.setOnClickListener { SovereignAddresses.showCheck(this@SovereignSettingsActivity) }
         svSummaryEnabledHolder.setOnClickListener {
             svSummaryEnabled.toggle()
             com.sovereignops.sms.SovereignSummary.setEnabled(this@SovereignSettingsActivity, svSummaryEnabled.isChecked)

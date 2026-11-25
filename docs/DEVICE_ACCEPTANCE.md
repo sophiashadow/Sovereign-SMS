@@ -1,6 +1,6 @@
 # Physical-device acceptance checklist
 
-To be done by the owner, on the owner's phone, for v0.1.0-alpha.1. **None of these has been run yet.**
+To be done by the owner, on the owner's phone, for v0.1.0-alpha.2. **None of these has been run yet.** (First use of alpha.1 found the group defects in [GROUP_CONVERSATIONS.md](GROUP_CONVERSATIONS.md); the group items below re-check them.)
 
 Record each item as PASS, FAIL or NOT_RUN, with the date, the device model, the One UI or Android version and the build's SHA-256. Keep the results somewhere private, not in this repository, if they name a device or carrier. Only a summary belongs in [STATUS.md](STATUS.md).
 
@@ -45,6 +45,24 @@ Use the **release** APK (signed with the owner's key) for every gate unless the 
 - [ ] D: Lock-screen display: Professional and Unknown show the neutral "New message" version, and Personal follows the channel setting. Note how One UI styles it.
 - [ ] D: Focus-ending notice arrives about 5 minutes before the end, including after a reboot during focus.
 - [ ] D: Daily summary arrives at the chosen time and is silent. Its public version shows no counts. With Quick Cover on, it shows no counts at all.
+
+## Group conversations
+
+Use only the owner's own lines. A group needs at least two other numbers the owner controls, or it can't be tested, and is NOT_RUN.
+
+- [ ] D: Settings → Sovereign → Check conversations opens, changes nothing, and the copied report holds no number or name.
+- [ ] D: A thread the report lists as having an unrecognized address:
+  - shows a fallback title, not the raw string;
+  - shows "Can't reply to this conversation" in place of the composer;
+  - can be renamed, and the name survives an app restart.
+- [ ] D: Threads the report lists as possible duplicates are still separate and all messages are still there.
+- [ ] C: New group MMS (setting "Send group messages as MMS" on) to two of the owner's lines:
+  - every line receives one group message;
+  - their replies arrive in the same Sovereign thread;
+  - no line receives its own message back.
+- [ ] C: A reply from the group's notification: there is no inline Reply action, and tapping opens the group thread.
+- [ ] C: The same group with the setting off: each line gets a separate SMS, and replies arrive in one-to-one threads (expected).
+- [ ] D: Note whether the report says "Your own number: not known to Android".
 
 ## Privacy controls
 

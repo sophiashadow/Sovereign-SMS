@@ -102,7 +102,11 @@ class NotificationHelper(private val context: Context) {
             )
 
         var replyAction: NotificationCompat.Action? = null
-        val isNoReplySms = isShortCodeWithLetters(address)
+        // Sovereign SMS: no inline reply in a group thread (it would go to the sender alone and
+        // start a separate one-to-one thread) or to an unrecognized address.
+        val isNoReplySms = isShortCodeWithLetters(address) ||
+            !com.sovereignops.sms.core.address.AddressClassifier.isSendable(address) ||
+            com.sovereignops.sms.ui.SovereignAddresses.isGroupThread(context, threadId)
         if (!isNoReplySms) {
             val replyLabel = context.getString(R.string.reply)
             val remoteInput = RemoteInput.Builder(REPLY)

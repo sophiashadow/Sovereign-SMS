@@ -623,6 +623,33 @@
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/sv_check_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/sv_check_label"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sv_check_conversations"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/sv_check"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/sv_check_conversations_summary"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/sv_check_label" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
             <RelativeLayout
                 android:id="@+id/sv_summary_enabled_holder"
                 style="@style/SettingsHolderSwitchStyle"

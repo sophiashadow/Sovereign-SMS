@@ -144,7 +144,7 @@ class SovereignQueueActivity : SimpleActivity() {
                 runOnUiThread { toast(R.string.sv_queue_no_address); binding.sqSend.isEnabled = true }
                 return@ensureBackgroundThread
             }
-            val ok = runCatching { sendMessageCompat(text, addresses, null, emptyList()) }.isSuccess
+            val ok = runCatching { sendMessageCompat(text, addresses, null, emptyList()) }.getOrDefault(false)
             if (ok) VaultCache.update(this, threadId) { AvailabilityQueue.recordSend(it, System.currentTimeMillis()) }
             runOnUiThread {
                 if (ok) {

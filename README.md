@@ -6,7 +6,7 @@ A private SMS/MMS app for Android, for independent service providers, freelancer
 - Its own records (contact cards, rules, ledger) are kept in an encrypted local vault.
 - Messages themselves are ordinary carrier SMS and MMS. They are **not end-to-end encrypted**, and this app doesn't change that.
 
-It is a fork of **[Fossify Messages](https://github.com/FossifyOrg/Messages)** 1.10.3 (GPL-3.0). See [docs/PROVENANCE.md](docs/PROVENANCE.md). Version: **0.1.0-alpha.1**. It has not yet been tested on a phone; see [Known limitations](docs/KNOWN_LIMITATIONS.md).
+It is a fork of **[Fossify Messages](https://github.com/FossifyOrg/Messages)** 1.10.3 (GPL-3.0). See [docs/PROVENANCE.md](docs/PROVENANCE.md). Version: **0.1.0-alpha.2**. It has not yet been tested on a phone; see [Known limitations](docs/KNOWN_LIMITATIONS.md).
 
 ## What it adds to Fossify Messages
 
@@ -82,7 +82,8 @@ Feature state, with evidence: [docs/STATUS.md](docs/STATUS.md).
 | [DEVICE_ACCEPTANCE.md](docs/DEVICE_ACCEPTANCE.md) | Physical-device acceptance checklist |
 | [ANDROID17_ONEUI_AUDIT.md](docs/ANDROID17_ONEUI_AUDIT.md) | Android 17 and One UI audit |
 | [PROVENANCE.md](docs/PROVENANCE.md) | Upstream and third-party provenance |
-| [CHANGELOG.md](CHANGELOG.md), [release notes](docs/release/RELEASE_NOTES_0.1.0-alpha.1.md) | Changes |
+| [GROUP_CONVERSATIONS.md](docs/GROUP_CONVERSATIONS.md) | Group threads, unrecognized addresses and RCS leftovers |
+| [CHANGELOG.md](CHANGELOG.md), [release notes](docs/release/RELEASE_NOTES_0.1.0-alpha.2.md) | Changes |
 
 ## Build
 

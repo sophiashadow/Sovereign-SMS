@@ -57,6 +57,13 @@ class ScheduledMessageReceiver : BroadcastReceiver() {
         val addresses = message.participants.getAddresses()
         val attachments = message.attachment?.attachments ?: emptyList()
 
+        // Sovereign SMS: an unrecognized address: sendMessageCompat refuses and says why; the
+        // scheduled message is kept rather than deleted as sent.
+        if (addresses.isNotEmpty() && !com.sovereignops.sms.core.address.AddressClassifier.allSendable(addresses)) {
+            Handler(Looper.getMainLooper()).post { context.sendMessageCompat(message.body, addresses, message.subscriptionId, attachments) }
+            return
+        }
+
         try {
             Handler(Looper.getMainLooper()).post {
                 context.sendMessageCompat(message.body, addresses, message.subscriptionId, attachments)

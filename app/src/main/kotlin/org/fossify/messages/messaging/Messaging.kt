@@ -35,14 +35,23 @@ fun Context.isLongMmsMessage(text: String, settings: Settings = getSendMessageSe
     return numPages > settings.sendLongAsMmsAfter && settings.sendLongAsMms
 }
 
-/** Sends the message using the in-app SmsManager API wrappers if it's an SMS or using android-smsmms for MMS. */
+/**
+ * Sends the message using the in-app SmsManager API wrappers if it's an SMS or using android-smsmms for MMS.
+ * Sovereign SMS: returns false, sending nothing, when any address is not a phone number,
+ * short code or email (for example another messenger's chat ID). Sending to the rest
+ * would start a different thread, so the whole send is refused.
+ */
 fun Context.sendMessageCompat(
     text: String,
     addresses: List<String>,
     subId: Int?,
     attachments: List<Attachment>,
     messageId: Long? = null
-) {
+): Boolean {
+    if (addresses.isNotEmpty() && !com.sovereignops.sms.core.address.AddressClassifier.allSendable(addresses)) {
+        toast(R.string.sv_unsendable_address, LENGTH_LONG)
+        return false
+    }
     val settings = getSendMessageSettings()
     if (subId != null) {
         settings.subscriptionId = subId
@@ -105,6 +114,7 @@ fun Context.sendMessageCompat(
         val threadId = getThreadId(addresses.toSet())
         shortcutHelper.reportSendMessageUsage(threadId)
     }
+    return true
 }
 
 /**

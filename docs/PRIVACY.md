@@ -1,6 +1,6 @@
 # Privacy policy
 
-Sovereign SMS, version 0.1.0-alpha.1. Effective from its first release.
+Sovereign SMS, version 0.1.0-alpha.2. Effective from its first release.
 
 ## Short version
 

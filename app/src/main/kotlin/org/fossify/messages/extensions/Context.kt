@@ -19,7 +19,6 @@ import android.provider.Telephony.Sms
 import android.provider.Telephony.Threads
 import android.provider.Telephony.ThreadsColumns
 import android.telephony.SubscriptionManager
-import android.text.TextUtils
 import androidx.core.net.toUri
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -419,7 +418,8 @@ fun Context.getConversations(
             }
 
             val names = getThreadContactNames(phoneNumbers, privateContacts)
-            val title = TextUtils.join(", ", names.toTypedArray())
+            // Sovereign SMS: never title a thread with a raw chat ID or a blank address.
+            val title = com.sovereignops.sms.core.address.ThreadTitle.build(phoneNumbers.zip(names))
             val photoUri =
                 if (phoneNumbers.size == 1) simpleContactHelper.getPhotoUriFromPhoneNumber(
                     phoneNumbers.first()
@@ -697,6 +697,11 @@ fun Context.getThreadContactNames(
 ): ArrayList<String> {
     val names = ArrayList<String>()
     phoneNumbers.forEach { number ->
+        // Sovereign SMS: an unrecognized address has no contact and is not shown verbatim.
+        if (com.sovereignops.sms.core.address.AddressClassifier.isUnrecognized(number)) {
+            names.add(com.sovereignops.sms.core.address.ThreadTitle.UNRECOGNIZED)
+            return@forEach
+        }
         val name = SimpleContactsHelper(this).getNameFromPhoneNumber(number)
         if (name != number) {
             names.add(name)
@@ -788,6 +793,10 @@ fun Context.getSuggestedContacts(
 }
 
 fun Context.getNameAndPhotoFromPhoneNumber(number: String): NamePhoto {
+    // Sovereign SMS: a chat ID or blank address is labelled, not looked up or shown raw.
+    if (com.sovereignops.sms.core.address.AddressClassifier.isUnrecognized(number)) {
+        return NamePhoto(com.sovereignops.sms.core.address.ThreadTitle.UNRECOGNIZED, null)
+    }
     MessagingCache.namePhoto.get(number)?.let { return it }
     if (!hasPermission(PERMISSION_READ_CONTACTS)) {
         return NamePhoto(number, null)

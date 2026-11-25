@@ -363,8 +363,9 @@ class ThreadActivity : SimpleActivity() {
                 threadItems.isNotEmpty() && conversation?.isArchived == false && !isRecycleBin && archiveAvailable
             findItem(R.id.unarchive).isVisible =
                 threadItems.isNotEmpty() && conversation?.isArchived == true && !isRecycleBin && archiveAvailable
-            findItem(R.id.rename_conversation).isVisible =
-                participants.size > 1 && conversation != null && !isRecycleBin
+            findItem(R.id.rename_conversation).isVisible = // Sovereign SMS: or an unrecognized address
+                (participants.size > 1 || com.sovereignops.sms.core.address.AddressClassifier.anyUnrecognized(participants.getAddresses())) &&
+                    conversation != null && !isRecycleBin
             findItem(R.id.conversation_details).isVisible = conversation != null && !isRecycleBin
             findItem(R.id.block_number).title =
                 getString(org.fossify.commons.R.string.block_number)
@@ -1053,7 +1054,8 @@ class ThreadActivity : SimpleActivity() {
 
     private fun isSpecialNumber(): Boolean {
         val addresses = participants.getAddresses()
-        return addresses.any { isShortCodeWithLetters(it) }
+        return addresses.any { isShortCodeWithLetters(it) } ||
+            com.sovereignops.sms.core.address.AddressClassifier.anyUnrecognized(addresses) // Sovereign SMS
     }
 
     private fun maybeDisableShortCodeReply() {
@@ -1064,13 +1066,16 @@ class ThreadActivity : SimpleActivity() {
             binding.messageHolder.root.beGone()
             binding.shortCodeHolder.root.beVisible()
             val textColor = getProperTextColor()
+            // Sovereign SMS: say why when the cause is an unrecognized address, not a short code.
+            val sovereignUnsupported = com.sovereignops.sms.core.address.AddressClassifier.anyUnrecognized(participants.getAddresses())
+            if (sovereignUnsupported) binding.shortCodeHolder.replyDisabledText.setText(R.string.sv_unsupported_thread)
             binding.shortCodeHolder.replyDisabledText.setTextColor(textColor)
             binding.shortCodeHolder.replyDisabledInfo.apply {
                 applyColorFilter(textColor)
                 setOnClickListener {
                     InvalidNumberDialog(
                         activity = this@ThreadActivity,
-                        text = getString(R.string.invalid_short_code_desc)
+                        text = getString(if (sovereignUnsupported) R.string.sv_unsupported_thread_desc else R.string.invalid_short_code_desc)
                     )
                 }
                 tooltipText = getString(org.fossify.commons.R.string.more_info)
@@ -1702,7 +1707,7 @@ class ThreadActivity : SimpleActivity() {
 
         try {
             refreshedSinceSent = false
-            sendMessageCompat(text, addresses, subscriptionId, attachments, messageToResend)
+            if (!sendMessageCompat(text, addresses, subscriptionId, attachments, messageToResend)) return // Sovereign SMS: refused; keep the draft
             ensureBackgroundThread {
                 val existingMessages = messages.toSortedMessages()
                 val messages = getMessages(threadId, limit = maxOf(1, attachments.size))

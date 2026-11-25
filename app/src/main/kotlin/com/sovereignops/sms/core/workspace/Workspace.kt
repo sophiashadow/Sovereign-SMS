@@ -54,6 +54,7 @@ object Workspace {
      */
     fun rowIsKnown(title: String, phoneNumber: String, isGroup: Boolean, usesCustomTitle: Boolean, hasCard: Boolean): Boolean = when {
         hasCard || isGroup || usesCustomTitle -> true
+        com.sovereignops.sms.core.address.AddressClassifier.isUnrecognized(phoneNumber) -> false
         title.isBlank() -> false
         title.trim().equals(phoneNumber.trim(), ignoreCase = true) -> false
         com.sovereignops.sms.core.rules.Addresses.sameNumber(title, phoneNumber) -> false

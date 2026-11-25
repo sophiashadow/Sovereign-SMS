@@ -289,6 +289,10 @@ object Addresses {
      * both are at least 10 long (international prefixes). Short codes must match exactly.
      */
     fun sameNumber(a: String, b: String): Boolean {
+        // Digits inside a chat ID or other opaque token are not a phone number.
+        if (!com.sovereignops.sms.core.address.AddressClassifier.isPhoneLike(a) ||
+            !com.sovereignops.sms.core.address.AddressClassifier.isPhoneLike(b)
+        ) return false
         val x = normalize(a)
         val y = normalize(b)
         if (x.isEmpty() || y.isEmpty()) return false

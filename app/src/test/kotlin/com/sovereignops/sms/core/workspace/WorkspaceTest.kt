@@ -45,6 +45,9 @@ class WorkspaceTest {
         assertFalse(Workspace.rowIsKnown("+1 (919) 555-0142", n, isGroup = false, usesCustomTitle = false, hasCard = false))
         assertFalse(Workspace.rowIsKnown("72345", "72345", false, false, false))
         assertFalse(Workspace.rowIsKnown("MERIDIAN", "MERIDIAN", false, false, false)) // alphanumeric sender ID
+        // Regression: a fallback title has letters, but an unrecognized address is still unknown.
+        assertFalse(Workspace.rowIsKnown("Unsupported conversation", "3f2a9c1e-7b4d-4e8a-9c0f-1a2b3c4d5e6f", false, false, false))
+        assertFalse(Workspace.rowIsKnown("Unrecognized address", "", false, false, false))
         assertTrue(Workspace.rowIsKnown("Sam Example", n, false, false, false))
         assertFalse(Workspace.rowIsKnown("", n, false, false, false))
     }

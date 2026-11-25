@@ -50,8 +50,10 @@ class ConversationsAdapter(
                 isSingleSelection && !isGroupConversation &&
                         !isShortCodeWithLetters(selectedConversation.phoneNumber)
             findItem(R.id.cab_copy_number).isVisible = isSingleSelection && !isGroupConversation
+            // Sovereign SMS: also rename a one-to-one thread whose address is unrecognized.
             findItem(R.id.cab_rename_conversation).isVisible =
-                isSingleSelection && isGroupConversation
+                isSingleSelection && (isGroupConversation ||
+                    com.sovereignops.sms.core.address.AddressClassifier.isUnrecognized(selectedConversation.phoneNumber))
             findItem(R.id.cab_conversation_details).isVisible = isSingleSelection
             findItem(R.id.cab_mark_as_read).isVisible = selectedItems.any { !it.read }
             findItem(R.id.cab_mark_as_unread).isVisible = selectedItems.any { it.read }

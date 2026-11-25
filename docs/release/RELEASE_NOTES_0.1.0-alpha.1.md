@@ -1,5 +1,7 @@
 # Sovereign SMS 0.1.0-alpha.1
 
+> **Superseded before release** by [0.1.0-alpha.2](RELEASE_NOTES_0.1.0-alpha.2.md) after the owner's first use on a phone. Kept as the record of what was built and checked on 2026-11-24.
+
 **Alpha. Not yet tested on a phone or over a carrier network.** This is a release candidate for the owner's own device testing. It is not a public release. Read [KNOWN_LIMITATIONS.md](../KNOWN_LIMITATIONS.md) and [DEVICE_ACCEPTANCE.md](../DEVICE_ACCEPTANCE.md) first.
 
 - Package `com.sovereignops.sms`, versionCode 1, versionName 0.1.0-alpha.1.

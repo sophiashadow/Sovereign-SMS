@@ -131,3 +131,13 @@ available** (no `/dev/kvm`), so nothing below was reproduced dynamically.
 - **Encryption.** Carrier SMS is not end-to-end encrypted, and this app doesn't change that.
 - **Unencrypted exports.** The thread ZIP, settings pack, ledger CSV/Markdown and upstream message export are plain files. Each shows a warning naming what it contains (never blocks). Settings-pack import names the sections it replaces, asks first and offers Undo.
 - **Signing.** The release key used here is throwaway. Production needs the owner's keystore and a pinned certificate digest (`BUILD_AND_SIGNING.md`).
+
+## Addendum: 0.1.0-alpha.2 (2026-11-25)
+
+The changes are in [GROUP_CONVERSATIONS.md](GROUP_CONVERSATIONS.md). Their security-relevant effects:
+
+- **Fewer destinations accepted.** Every send path refuses addresses that are not a phone number, short code or email. Nothing new can be sent.
+- **Fewer reply surfaces.** Notification inline reply is no longer offered in group threads or for unsendable addresses.
+- **One new read path.** Check conversations reads `threads` and `canonical-addresses` from Android's message store, read-only. It already had READ_SMS, and it writes nothing. The report shows only shapes and thread numbers. Own numbers are read from `SubscriptionManager` and `TelephonyManager` (READ_PHONE_STATE, already declared, and the default SMS role), compared in memory, and never displayed or stored. The `no-leak` test in `ThreadAuditTest` covers the report.
+- **No change to the manifest.** There are no new permissions, still 16, and no new components. INTERNET is still absent. Checked on the merged debug manifest.
+

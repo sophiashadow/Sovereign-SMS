@@ -311,4 +311,13 @@
     <string name="sv_pack_part_guard">draft-guard rules</string>
     <string name="sv_pack_part_templates">templates</string>
     <string name="sv_pack_part_flags">incoming flag rules</string>
+    <!-- Unrecognized addresses (chat IDs and other non-SMS addresses in the shared message store) -->
+    <string name="sv_unsendable_address">Not sent: this conversation includes an address that isn\'t a phone number or email, such as another messaging app\'s chat ID</string>
+    <string name="sv_unsupported_thread">Can\'t reply to this conversation</string>
+    <string name="sv_unsupported_thread_desc">This conversation includes an address that isn\'t a phone number, short code or email. Another messaging app, often one using RCS chat, may have created it. Sovereign SMS doesn\'t support RCS and won\'t send to such an address. Your messages are kept. To reply, start a new conversation with the same people by number, or use the app that created this one.</string>
+    <string name="sv_check_conversations">Check conversations</string>
+    <string name="sv_check_conversations_summary">Read-only report on unrecognized addresses and possible duplicate threads. Shows shapes and thread numbers only</string>
+    <string name="sv_check_note">Nothing was changed. Duplicates are not merged. Copy report copies only the text above, which holds no numbers, names or messages.</string>
+    <string name="sv_copy_report">Copy report</string>
+    <string name="sv_check_failed">Couldn\'t read Android\'s message store. Sovereign SMS may not be the default SMS app.</string>
 </resources>

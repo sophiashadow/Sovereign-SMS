@@ -1,4 +1,4 @@
-# Draft: pull request and tag for v0.1.0-alpha.1
+# Draft: pull request and tag for v0.1.0-alpha.2
 
 **Not created.** This file is a draft for the owner. No pull request has been opened and no tag has been created or pushed. Both need the owner's authorization.
 
@@ -6,7 +6,7 @@
 
 - **From:** `ccr-5af7f929-w70bd7`
 - **Into:** `main`
-- **Title:** Sovereign SMS 0.1.0-alpha.1: fork of Fossify Messages 1.10.3 with local rules, encrypted vault, portability and release tooling
+- **Title:** Sovereign SMS 0.1.0-alpha.2: fork of Fossify Messages 1.10.3 with local rules, encrypted vault, portability and release tooling
 
 ### Body
 
@@ -31,11 +31,12 @@ This brings Sovereign SMS to its first alpha release candidate on top of Fossify
   - formats documented in `docs/BACKUP_RESTORE.md`.
 - Ledger realized-cash basis (vault schema 3, an additive migration). Historical days are kept as legacy days, not reinterpreted.
 - Release tooling (`scripts/verify-apk.sh`, `scripts/release-artifacts.sh`) and the owner signing workflow (`docs/BUILD_AND_SIGNING.md`).
+- Group-conversation stabilization (alpha.2): unrecognized addresses are never titles or destinations; no inline reply in groups; read-only Check conversations report (`docs/GROUP_CONVERSATIONS.md`).
 - Shipped notices completed: IndicatorFastScroll (MIT, previously recorded wrongly as Apache-2.0), ez-vcard (BSD-2-Clause) and W3C.
 
 #### Evidence
 
-See `docs/release/RELEASE_NOTES_0.1.0-alpha.1.md` § Verification for exact commands, counts and checksums.
+See `docs/release/RELEASE_NOTES_0.1.0-alpha.2.md` § Verification for exact commands, counts and checksums.
 
 - Local JVM tests, lint, and debug and release builds were run.
 - The release APK was checked with `scripts/verify-apk.sh`. It was signed with a **throwaway key** only.
@@ -60,8 +61,8 @@ https://claude.ai/code/session_01YYUBz9BMJr1SckcVCzaMj9
 Create it only after the owner has signed the release with the permanent key, run `docs/DEVICE_ACCEPTANCE.md`, and decided to release.
 
 ```sh
-git tag -a v0.1.0-alpha.1 <release-commit> -m "Sovereign SMS 0.1.0-alpha.1"
-git push origin v0.1.0-alpha.1      # owner only
+git tag -a v0.1.0-alpha.2 <release-commit> -m "Sovereign SMS 0.1.0-alpha.2"
+git push origin v0.1.0-alpha.2      # owner only
 ```
 
-`<release-commit>` is the commit named in `dist/0.1.0-alpha.1/SHA256SUMS`, the first line of that file. If code changes after device testing, raise `VERSION_CODE`, rebuild, and tag the new commit instead.
+`<release-commit>` is the commit named in `dist/0.1.0-alpha.2/SHA256SUMS`, the first line of that file. If code changes after device testing, raise `VERSION_CODE`, rebuild, and tag the new commit instead.
